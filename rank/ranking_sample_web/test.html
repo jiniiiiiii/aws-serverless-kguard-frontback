@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Global Ranking</title>
+    <meta charset="utf-8">
+</head>
+<body>
+    <h1>🏆 실시간 랭킹 TOP 10</h1>
+    <div id="ranking-board">데이터를 불러오는 중...</div>
+
+    <script>
+        async function loadRanking() {
+            const API_URL = "https://zuabi9522f.execute-api.ap-northeast-2.amazonaws.com/KG_web_rank_api/ranking";
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ "action": "get_ranking" })
+                });
+
+                if (!response.ok) throw new Error('네트워크 응답 에러');
+
+                const data = await response.json();
+                console.log("받은 데이터:", data);
+
+                const board = document.getElementById('ranking-board');
+                
+                // 람다에서 준 rankings 배열을 화면에 뿌려줌
+                if (data.rankings && data.rankings.length > 0) {
+                    board.innerHTML = "<ul>" + data.rankings.map(r => 
+                        `<li><strong>${r.rank}위</strong>: ${r.user_id} (${r.score}점)</li>`
+                    ).join('') + "</ul>";
+                } else {
+                    board.innerHTML = "등록된 점수가 없습니다.";
+                }
+
+            } catch (error) {
+                console.error("에러:", error);
+                document.getElementById('ranking-board').innerText = "데이터를 불러오지 못했습니다.";
+            }
+        }
+
+        window.onload = loadRanking;
+    </script>
+</body>
+</html>

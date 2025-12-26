@@ -1,0 +1,32 @@
+[
+    {
+        "id": 1,
+        "title": "Server Maintenance Notice",
+        "date": "2025-12-22",
+        "isNew": true
+    },
+    {
+        "id": 2,
+        "title": "New Character: Santa Guardian",
+        "date": "2025-12-20",
+        "isNew": true
+    },
+    {
+        "id": 3,
+        "title": "Patch Note v1.2.0",
+        "date": "2025-12-15",
+        "isNew": false
+    },
+    {
+        "id": 4,
+        "title": "Ranking System Logic Change",
+        "date": "2025-12-10",
+        "isNew": false
+    },
+    {
+        "id": 5,
+        "title": "Community Event Winners",
+        "date": "2025-12-05",
+        "isNew": false
+    }
+]

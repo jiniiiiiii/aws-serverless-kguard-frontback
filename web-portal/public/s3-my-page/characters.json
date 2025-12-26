@@ -1,0 +1,30 @@
+[
+  {
+    "id": "char_1",
+    "name": "Guardian Knight",
+    "grade": "SR",
+    "level": 50,
+    "isAcquired": true
+  },
+  {
+    "id": "char_2",
+    "name": "Archer Elf",
+    "grade": "R",
+    "level": 40,
+    "isAcquired": true
+  },
+  {
+    "id": "char_3",
+    "name": "Mystic Mage",
+    "grade": "SSR",
+    "level": 1,
+    "isAcquired": false
+  },
+  {
+    "id": "char_4",
+    "name": "Cyber Ninja",
+    "grade": "SSR",
+    "level": 1,
+    "isAcquired": false
+  }
+]

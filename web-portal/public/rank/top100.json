@@ -1,0 +1,67 @@
+{
+  "updatedAt": "2025-12-22T00:00:00Z",
+  "top3": [
+    {
+      "rank": 1,
+      "username": "DragonSlayer",
+      "score": 999999,
+      "role": "Warrior"
+    },
+    {
+      "rank": 2,
+      "username": "No1_Guardian",
+      "score": 980000,
+      "role": "Mage"
+    },
+    {
+      "rank": 3,
+      "username": "FakerGod",
+      "score": 975000,
+      "role": "Archer"
+    }
+  ],
+  "others": [
+    {
+      "rank": 4,
+      "username": "User004",
+      "score": 960000,
+      "role": "Tank"
+    },
+    {
+      "rank": 5,
+      "username": "BladeMaster",
+      "score": 955000,
+      "role": "Warrior"
+    },
+    {
+      "rank": 6,
+      "username": "FastFinger",
+      "score": 940000,
+      "role": "Rogue"
+    },
+    {
+      "rank": 7,
+      "username": "WinnerWinner",
+      "score": 932000,
+      "role": "Mage"
+    },
+    {
+      "rank": 8,
+      "username": "ChickenDinner",
+      "score": 920000,
+      "role": "Archer"
+    },
+    {
+      "rank": 9,
+      "username": "K-Gamer",
+      "score": 910000,
+      "role": "Support"
+    },
+    {
+      "rank": 10,
+      "username": "TopTen",
+      "score": 900500,
+      "role": "Warrior"
+    }
+  ]
+}
