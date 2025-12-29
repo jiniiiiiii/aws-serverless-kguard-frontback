@@ -1,53 +1,81 @@
 import { MOCK_STATS, MOCK_CHARACTERS, MOCK_USER } from './mockData';
 
 const SIMULATE_DELAY = 500; // ms
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''; // .env 파일에서 API_BASE_URL을 가져옴
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''; 
+
+// ★ [추가됨] 로그 수집용 람다 API 주소 (확인된 주소 적용)
+const LOG_API_URL = "https://0v71llt3ta.execute-api.ap-northeast-2.amazonaws.com/default/KG-log-lambda-ap-ne-2";
 
 // Helper to simulate network request
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
  * API Service for S3-based Data Architecture
- * 
- * Fetches data from static JSON files in the public directory, matching the S3 structure.
  */
 export const api = {
-    // @ 공지사항
+    
+    // ★ [추가됨] 만능 로그 전송 함수 (sendLog)
+    sendLog: async (type, userId, detailData) => {
+        try {
+            const payload = {
+                type: type,                 // 예: "GAMEPLAY", "ERROR", "PAYMENT"
+                user_id: userId || "guest", 
+                timestamp: new Date().toISOString(),
+                data: detailData || {}
+            };
 
+            await fetch(LOG_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+        } catch (error) {
+            console.error("로그 전송 실패 (앱 동작엔 영향 없음):", error);
+        }
+    },
+
+    // @ 공지사항
     // Fetch List Summary (Page 1)
-    // Path: /notices/list/page_{page}.json
     getNotices: async (page = 1) => {
         try {
-            const response = await fetch(`/notices/list/page_${page}.json`);    // 해당 숫자에 해당하는 페이지 불러옴. ex) page_1.json
+            const response = await fetch(`/notices/list/page_${page}.json`);
             if (!response.ok) throw new Error('Failed to fetch notice list');
             const data = await response.json();
-            await delay(300); // Simulate network latency
+            await delay(300); 
             return data;
         } catch (error) {
             console.error("API Error:", error);
+            
+            // ★ [추가됨] 에러 발생 시 자동으로 로그 전송
+            // (여기서 this.sendLog가 안 될 수 있어서 api.sendLog 대신 위에서 정의한 함수를 호출하거나 안전하게 처리)
+            // 객체 내부에서 자기 자신을 호출하기 위해 api.sendLog 사용 (export된 객체 참조)
+            api.sendLog("ERROR", "guest", { 
+                location: "getNotices", 
+                message: error.message 
+            });
+
             return [];
         }
     },
 
-    // Fetch Full Detail -> 각각의 자세한 공지사항 보여주기
+    // Fetch Full Detail
     getNoticeDetail: async (id) => {
-        // Path: /notices/detail/{id}.json
         try {
-            const response = await fetch(`/notices/detail/${id}.json`);    // 해당 id에 해당하는 공지사항 불러옴. ex) 1.json
+            const response = await fetch(`/notices/detail/${id}.json`);
             if (!response.ok) throw new Error('Failed to fetch notice detail');
             const data = await response.json();
-            await delay(SIMULATE_DELAY); // Simulate heavier load
+            await delay(SIMULATE_DELAY); 
             return data;
         } catch (error) {
             console.error("API Detail Error:", error);
+            api.sendLog("ERROR", "guest", { location: "getNoticeDetail", id: id, message: error.message });
             return null;
         }
     },
 
     // ==== User Data (Separated to s3-my-page) ===
 
-    // Fetch User Profile -> 사용자 프로필 조회
-    // Path: /s3-my-page/profile.json (Simulates user data bucket)
+    // Fetch User Profile
     getUserProfile: async () => {
         try {
             const response = await fetch('/s3-my-page/profile.json');
@@ -61,42 +89,28 @@ export const api = {
         }
     },
 
-    // Fetch User Stats
-    // Path: /s3-my-page/stats.json -> s3에 저장되어있는 임시 데이터로 정적 조회
-    // getUserStats: async () => {
-    //     try {
-    //         const response = await fetch('/s3-my-page/stats.json');
-    //         if (!response.ok) throw new Error('Failed to fetch user stats');
-    //         const data = await response.json();
-    //         await delay(SIMULATE_DELAY);
-    //         return data;
-    //     } catch (error) {
-    //         console.error("API Error:", error);
-    //         return MOCK_STATS;
-    //     }
-    // },
-
-    // DynamoDB로 조회  -> 로그인 성공하면 해당 사용자의 정보를 실시간으로 조회
+    // DynamoDB로 조회
     getUserStats: async (token) => {
-        // API Gateway 호출 (DynamoDB 실시간 조회)
-        const response = await fetch(`${API_BASE_URL}/users/stats`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`, // 로그인 토큰 필요
-                'Content-Type': 'application/json'
-            }
-        });
+        try {
+            const response = await fetch(`${API_BASE_URL}/users/stats`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
 
-        if (!response.ok) throw new Error('API Error');
-        return await response.json();
+            if (!response.ok) throw new Error('API Error');
+            return await response.json();
+        } catch (error) {
+            // 여기도 에러 로그 추가 가능
+            console.error("Stats API Error:", error);
+            api.sendLog("ERROR", "user_token", { location: "getUserStats", message: error.message });
+            throw error;
+        }
     },
 
-
-
-
     // Fetch Characters
-    // Path: /s3-my-page/characters.json
-    // 추후에 dynamodb에 캐릭터 해금 칼럼을 만들어야 할 듯? true/false로 해금 여부를 확인할 예정
     getUserCharacters: async () => {
         try {
             const response = await fetch('/s3-my-page/characters.json');
@@ -111,12 +125,12 @@ export const api = {
     },
 
     // @@@ Global Ranking @@@
-    // Path: /rank/top100.json (더미데이터)
-    // 실제 랭킹 url에서 가져옴  
     getGlobalRanking: async () => {
         try {
-            // Real Backend API (Redis via Lambda)
-            const response = await fetch(`${API_RANKING_URL}/ranking`, {
+            // 주의: API_RANKING_URL이 정의되지 않았다면 API_BASE_URL로 대체하거나 확인 필요
+            const targetUrl = (typeof API_RANKING_URL !== 'undefined' ? API_RANKING_URL : API_BASE_URL);
+            
+            const response = await fetch(`${targetUrl}/ranking`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -127,16 +141,12 @@ export const api = {
             if (!response.ok) throw new Error('Ranking fetch failed');
 
             const result = await response.json();
-            // result = { rankings: [{rank, user_id, score}, ...] }
-
-            // Transform for Frontend (Ranking.jsx expects top3, others, username, role)
             const list = result.rankings || [];
 
-            // Map backend fields to frontend fields
             const formattedList = list.map(item => ({
                 rank: item.rank,
-                username: item.user_id, // Redis only has ID, using as username
-                role: 'Guardian',       // Default role
+                username: item.user_id, 
+                role: 'Guardian',       
                 score: item.score
             }));
 
@@ -148,9 +158,8 @@ export const api = {
 
         } catch (error) {
             console.error("API Ranking Error:", error);
-            // Return empty structure on error so UI doesn't crash
+            api.sendLog("ERROR", "guest", { location: "getGlobalRanking", message: error.message });
             return { top3: [], others: [] };
         }
     },
 };
-
