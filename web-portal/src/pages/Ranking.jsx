@@ -9,7 +9,11 @@ const Ranking = () => {
   const [data, setData] = useState({ top3: [], others: [] });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  
+useEffect(() => {
+    // 1. 페이지 접속 로그 (PAGE_VIEW)
+    api.sendLog("PAGE_VIEW", "guest", { page: "Ranking" });
+
     const fetchRank = async () => {
       try {
         const res = await api.getGlobalRanking();
@@ -17,10 +21,18 @@ const Ranking = () => {
         setData(res);
       } catch (e) {
         console.error(e);
+        
+        // 2. 에러 발생 로그 (ERROR)
+        api.sendLog("ERROR", "guest", { 
+            location: "RankingPage", 
+            message: e.message 
+        });
+        
       } finally {
         setLoading(false);
       }
     };
+
     fetchRank();
   }, []);
 
