@@ -2,6 +2,8 @@ import { MOCK_STATS, MOCK_CHARACTERS, MOCK_USER } from './mockData';
 
 const SIMULATE_DELAY = 500; // ms
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''; // .env 파일에서 API_BASE_URL을 가져옴
+const API_RANKING_URL = import.meta.env.VITE_API_RANKING_URL || ''; // .env 파일에서 API_RANKING_URL을 가져옴
+const API_HIGHSCORE_URL = import.meta.env.VITE_API_HIGHSCORE_RANKING_URL || '';
 
 // Helper to simulate network request
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -48,18 +50,18 @@ export const api = {
 
     // Fetch User Profile -> 사용자 프로필 조회
     // Path: /s3-my-page/profile.json (Simulates user data bucket)
-    getUserProfile: async () => {
-        try {
-            const response = await fetch('/s3-my-page/profile.json');
-            if (!response.ok) throw new Error('Failed to fetch user profile');
-            const data = await response.json();
-            await delay(SIMULATE_DELAY);
-            return data;
-        } catch (error) {
-            console.error("API Error:", error);
-            return MOCK_USER; // Fallback
-        }
-    },
+    // getUserProfile: async () => {
+    //     try {
+    //         const response = await fetch('/s3-my-page/profile.json');
+    //         if (!response.ok) throw new Error('Failed to fetch user profile');
+    //         const data = await response.json();
+    //         await delay(SIMULATE_DELAY);
+    //         return data;
+    //     } catch (error) {
+    //         console.error("API Error:", error);
+    //         return MOCK_USER; // Fallback
+    //     }
+    // },
 
     // Fetch User Stats
     // Path: /s3-my-page/stats.json -> s3에 저장되어있는 임시 데이터로 정적 조회
@@ -116,7 +118,15 @@ export const api = {
     getGlobalRanking: async () => {
         try {
             // Real Backend API (Redis via Lambda)
-            const response = await fetch(`${API_RANKING_URL}/ranking`, {
+            // [Modified] Strict usage of HighScore Lambda URL
+            const targetUrl = API_HIGHSCORE_URL;
+
+            if (!targetUrl) {
+                console.error("API_HIGHSCORE_URL is not defined in .env");
+                return { top3: [], others: [] };
+            }
+
+            const response = await fetch(targetUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -135,8 +145,10 @@ export const api = {
             // Map backend fields to frontend fields
             const formattedList = list.map(item => ({
                 rank: item.rank,
-                username: item.user_id, // Redis only has ID, using as username
-                role: 'Guardian',       // Default role
+                username: item.user_id, // Backward compatibility
+                email: item.user_id,    // Assuming user_id is the email as per requirement
+                region: item.region || 'Unknown', // Region from backend
+                role: 'Guardian',
                 score: item.score
             }));
 
@@ -152,5 +164,27 @@ export const api = {
             return { top3: [], others: [] };
         }
     },
+
+    // [New] 내 랭킹만 따로 가져오기 (Redis)
+    getMyRank: async (userId) => {
+        try {
+            const targetUrl = API_HIGHSCORE_URL;
+            if (!targetUrl) return null;
+
+            const response = await fetch(targetUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'get_my_rank',
+                    user_id: userId
+                })
+            });
+            if (!response.ok) return null;
+            return await response.json(); // { rank: 5, score: 1250 }
+        } catch (e) {
+            console.error("Rank fetch failed:", e);
+            return null;
+        }
+    }
 };
 

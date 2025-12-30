@@ -1,20 +1,36 @@
 import React, { useEffect, useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'framer-motion';
 import { api } from '../services/api';
 import Card from '../components/ui/Card';
 import { Trophy, Medal, User } from 'lucide-react';
 import '../styles/index.css';
+import REGION_MAP from '../data/regions.json';
 
 const Ranking = () => {
+  const { user } = useAuth();
   const [data, setData] = useState({ top3: [], others: [] });
+  const [myRank, setMyRank] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchRank = async () => {
       try {
-        const res = await api.getGlobalRanking();
-        console.log("Ranking Data Fetched:", res);
-        setData(res);
+        // Parallel fetch for better performance
+        const promises = [api.getGlobalRanking()];
+        if (user && user.email) {
+          promises.push(api.getMyRank(user.email));
+        }
+
+        const results = await Promise.all(promises);
+        const globalData = results[0];
+        const myRankData = results[1] || null;
+
+        console.log("Ranking Data Fetched:", globalData);
+        setData(globalData);
+        if (myRankData) {
+          setMyRank(myRankData);
+        }
       } catch (e) {
         console.error(e);
       } finally {
@@ -22,7 +38,7 @@ const Ranking = () => {
       }
     };
     fetchRank();
-  }, []);
+  }, [user]);
 
   const getMedalColor = (rank) => {
     if (rank === 1) return 'var(--color-accent-gold)';
@@ -61,6 +77,44 @@ const Ranking = () => {
         <div style={{ textAlign: 'center', padding: '2rem' }}>Loading Rankings...</div>
       ) : (
         <>
+          {/* My Rank Section */}
+          {myRank && (user) && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{ marginBottom: '3rem' }}
+            >
+              <Card style={{
+                border: '2px solid var(--color-primary)',
+                background: 'linear-gradient(135deg, rgba(var(--color-primary-rgb), 0.1), rgba(0,0,0,0.3))',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '2rem'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)' }}>MY RANK</div>
+                    <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: 'var(--color-primary)' }}>
+                      {myRank.rank > 0 ? `#${myRank.rank}` : '-'}
+                    </div>
+                  </div>
+                  <div>
+                    <h2 style={{ margin: 0 }}>{user.name || user.email.split('@')[0]}</h2>
+                    <div style={{ color: 'var(--color-text-secondary)' }}>{user.email}</div>
+                  </div>
+                </div>
+
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)' }}>HIGHSCORE</div>
+                  <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>
+                    {myRank.score ? myRank.score.toLocaleString() : 0} pts
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+          )}
+
           {/* Top 3 Podium */}
           <div style={{
             display: 'grid',
@@ -97,6 +151,7 @@ const Ranking = () => {
             ))}
           </div>
 
+
           {/* 4-100 List */}
           <motion.div
             variants={containerVariants}
@@ -107,36 +162,41 @@ const Ranking = () => {
             {data.others.map((user) => (
               <motion.div key={user.rank} variants={itemVariants}>
                 <Card style={{
-                  padding: '1rem 2rem',
+                  padding: '1rem',
                   display: 'flex',
                   alignItems: 'center',
+                  background: 'var(--glass-bg)',
+                  border: '1px solid var(--glass-border)',
                   justifyContent: 'space-between'
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-                    <span style={{
-                      fontSize: '1.25rem',
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flex: 1 }}>
+                    {/* Rank */}
+                    <div style={{
+                      fontSize: '1.5rem',
                       fontWeight: 'bold',
+                      color: 'var(--color-text-secondary)',
                       width: '40px',
-                      color: 'var(--color-text-secondary)'
+                      textAlign: 'center'
                     }}>
                       {user.rank}
-                    </span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                      <div style={{
-                        width: '32px', height: '32px', borderRadius: '50%',
-                        background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center'
-                      }}>
-                        <User size={16} />
+                    </div>
+
+                    {/* User Info & Region */}
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <div style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>
+                        {user.email || user.username}
                       </div>
-                      <span style={{ fontSize: '1.1rem' }}>{user.username}</span>
+                      <div style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span>{REGION_MAP[user.region] || user.region || 'Unknown Region'}</span>
+                      </div>
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
-                    <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>{user.role}</span>
-                    <span style={{ fontWeight: 'bold', width: '100px', textAlign: 'right' }}>
+                  {/* Score */}
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--color-primary)' }}>
                       {user.score.toLocaleString()}
-                    </span>
+                    </div>
                   </div>
                 </Card>
               </motion.div>

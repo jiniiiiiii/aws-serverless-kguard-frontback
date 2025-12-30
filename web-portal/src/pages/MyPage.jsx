@@ -119,10 +119,12 @@ const MyPage = () => {
                         <div>
                             <p style={{ margin: 0, color: 'var(--color-text-secondary)' }}>Global Rank</p>
                             <h3 className="text-glow-blue" style={{ margin: 0, fontSize: '2rem' }}>
-                                #{stats.rank}
-                                <span style={{ fontSize: '1rem', color: 'var(--color-text-secondary)', marginLeft: '0.5rem' }}>
-                                    (Top {stats.topPercent}%)
-                                </span>
+                                {stats.rank && stats.rank > 0 ? `#${stats.rank}` : 'Unranked'}
+                                {stats.topPercent && (
+                                    <span style={{ fontSize: '1rem', color: 'var(--color-text-secondary)', marginLeft: '0.5rem' }}>
+                                        (Top {stats.topPercent}%)
+                                    </span>
+                                )}
                             </h3>
                         </div>
                     </div>
@@ -179,6 +181,7 @@ const MyPage = () => {
             </div>
         </div>
     );
+
 };
 
 export default MyPage;

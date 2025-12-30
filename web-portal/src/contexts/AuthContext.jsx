@@ -30,12 +30,15 @@ export const AuthProvider = ({ children }) => {
                     };
 
                     try {
-                        // [Fix 2] 프로필 Fetch는 실패해도 로그아웃 시키지 않음 (S3/CloudFront 문제 방어)
-                        const userData = await api.getUserProfile();
-                        userState = { ...userData, ...userState }; // 토큰 정보가 우선 (email 등)
+                        // [Modified] S3 프로필 조회 제거 (더 이상 사용 안함)
+                        // 기본 아바타 등 설정
+                        const defaultProfile = {
+                            avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=" + username,
+                            role: "Guardian"
+                        };
+                        userState = { ...defaultProfile, ...userState };
                     } catch (profileError) {
-                        console.warn("Profile fetch failed, using basic info from token:", profileError);
-                        // 실패해도 토큰이 유효하므로 진행
+                        console.warn("Profile setup failed:", profileError);
                     }
 
                     setUser(userState);
@@ -58,9 +61,15 @@ export const AuthProvider = ({ children }) => {
             const token = await cognitoLogin(username, password);
             localStorage.setItem('auth_token', token);
 
-            // [Fix] mock profile만 가져오면 이메일이 틀리므로, 로그인한 이메일로 덮어쓰기
-            const mockProfile = await api.getUserProfile();
-            const realUser = { ...mockProfile, email: username, name: username.split('@')[0] };
+            // [Modified] S3 프로필 조회 제거 -> 토큰/기본값 사용
+            const defaultProfile = {
+                avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=" + username,
+                role: "Guardian",
+                email: username,
+                name: username.split('@')[0],
+                username: username
+            };
+            const realUser = defaultProfile;
 
             setUser(realUser); // 사용자 상태 관리
             setIsLoading(false);
