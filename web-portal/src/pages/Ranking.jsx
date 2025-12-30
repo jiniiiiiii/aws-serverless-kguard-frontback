@@ -13,7 +13,11 @@ const Ranking = () => {
   const [myRank, setMyRank] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  
+useEffect(() => {
+    // 1. 페이지 접속 로그 (PAGE_VIEW)
+    api.sendLog("PAGE_VIEW", "guest", { page: "Ranking" });
+
     const fetchRank = async () => {
       try {
         // Parallel fetch for better performance
@@ -33,10 +37,18 @@ const Ranking = () => {
         }
       } catch (e) {
         console.error(e);
+        
+        // 2. 에러 발생 로그 (ERROR)
+        api.sendLog("ERROR", "guest", { 
+            location: "RankingPage", 
+            message: e.message 
+        });
+        
       } finally {
         setLoading(false);
       }
     };
+
     fetchRank();
   }, [user]);
 

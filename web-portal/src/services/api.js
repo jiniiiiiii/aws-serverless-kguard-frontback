@@ -1,55 +1,79 @@
 import { MOCK_STATS, MOCK_CHARACTERS, MOCK_USER } from './mockData';
 
 const SIMULATE_DELAY = 500; // ms
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''; // .env 파일에서 API_BASE_URL을 가져옴
-const API_RANKING_URL = import.meta.env.VITE_API_RANKING_URL || ''; // .env 파일에서 API_RANKING_URL을 가져옴
+
+// [ENV] 환경 변수 설정
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const API_RANKING_URL = import.meta.env.VITE_API_RANKING_URL || '';
 const API_HIGHSCORE_URL = import.meta.env.VITE_API_HIGHSCORE_RANKING_URL || '';
+
+// [Remote] 로그 수집용 람다 API 주소
+const LOG_API_URL = "https://0v71llt3ta.execute-api.ap-northeast-2.amazonaws.com/default/KG-log-lambda-ap-ne-2";
 
 // Helper to simulate network request
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
  * API Service for S3-based Data Architecture
- * 
- * Fetches data from static JSON files in the public directory, matching the S3 structure.
  */
 export const api = {
-    // @ 공지사항
 
-    // Fetch List Summary (Page 1)
-    // Path: /notices/list/page_{page}.json
+    // [Remote] 만능 로그 전송 함수 (sendLog)
+    sendLog: async (type, userId, detailData) => {
+        try {
+            const payload = {
+                type: type,                 // 예: "GAMEPLAY", "ERROR", "PAYMENT"
+                user_id: userId || "guest",
+                timestamp: new Date().toISOString(),
+                data: detailData || {}
+            };
+
+            await fetch(LOG_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+        } catch (error) {
+            console.error("로그 전송 실패 (앱 동작엔 영향 없음):", error);
+        }
+    },
+
+    // @ 공지사항
     getNotices: async (page = 1) => {
         try {
-            const response = await fetch(`/notices/list/page_${page}.json`);    // 해당 숫자에 해당하는 페이지 불러옴. ex) page_1.json
+            const response = await fetch(`/notices/list/page_${page}.json`);
             if (!response.ok) throw new Error('Failed to fetch notice list');
             const data = await response.json();
-            await delay(300); // Simulate network latency
+            await delay(300);
             return data;
         } catch (error) {
             console.error("API Error:", error);
+            api.sendLog("ERROR", "guest", {
+                location: "getNotices",
+                message: error.message
+            });
             return [];
         }
     },
 
-    // Fetch Full Detail -> 각각의 자세한 공지사항 보여주기
+    // Fetch Full Detail
     getNoticeDetail: async (id) => {
-        // Path: /notices/detail/{id}.json
         try {
-            const response = await fetch(`/notices/detail/${id}.json`);    // 해당 id에 해당하는 공지사항 불러옴. ex) 1.json
+            const response = await fetch(`/notices/detail/${id}.json`);
             if (!response.ok) throw new Error('Failed to fetch notice detail');
             const data = await response.json();
-            await delay(SIMULATE_DELAY); // Simulate heavier load
+            await delay(SIMULATE_DELAY);
             return data;
         } catch (error) {
             console.error("API Detail Error:", error);
+            api.sendLog("ERROR", "guest", { location: "getNoticeDetail", id: id, message: error.message });
             return null;
         }
     },
 
     // ==== User Data (Separated to s3-my-page) ===
 
-    // Fetch User Profile -> 사용자 프로필 조회
-    // Path: /s3-my-page/profile.json (Simulates user data bucket)
+    // [Local Key Change] getUserProfile is deprecated/commented out to avoid errors
     // getUserProfile: async () => {
     //     try {
     //         const response = await fetch('/s3-my-page/profile.json');
@@ -63,42 +87,27 @@ export const api = {
     //     }
     // },
 
-    // Fetch User Stats
-    // Path: /s3-my-page/stats.json -> s3에 저장되어있는 임시 데이터로 정적 조회
-    // getUserStats: async () => {
-    //     try {
-    //         const response = await fetch('/s3-my-page/stats.json');
-    //         if (!response.ok) throw new Error('Failed to fetch user stats');
-    //         const data = await response.json();
-    //         await delay(SIMULATE_DELAY);
-    //         return data;
-    //     } catch (error) {
-    //         console.error("API Error:", error);
-    //         return MOCK_STATS;
-    //     }
-    // },
-
-    // DynamoDB로 조회  -> 로그인 성공하면 해당 사용자의 정보를 실시간으로 조회
+    // DynamoDB로 조회
     getUserStats: async (token) => {
-        // API Gateway 호출 (DynamoDB 실시간 조회)
-        const response = await fetch(`${API_BASE_URL}/users/stats`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`, // 로그인 토큰 필요
-                'Content-Type': 'application/json'
-            }
-        });
+        try {
+            const response = await fetch(`${API_BASE_URL}/users/stats`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
 
-        if (!response.ok) throw new Error('API Error');
-        return await response.json();
+            if (!response.ok) throw new Error('API Error');
+            return await response.json();
+        } catch (error) {
+            console.error("Stats API Error:", error);
+            api.sendLog("ERROR", "user_token", { location: "getUserStats", message: error.message });
+            throw error;
+        }
     },
 
-
-
-
     // Fetch Characters
-    // Path: /s3-my-page/characters.json
-    // 추후에 dynamodb에 캐릭터 해금 칼럼을 만들어야 할 듯? true/false로 해금 여부를 확인할 예정
     getUserCharacters: async () => {
         try {
             const response = await fetch('/s3-my-page/characters.json');
@@ -113,12 +122,9 @@ export const api = {
     },
 
     // @@@ Global Ranking @@@
-    // Path: /rank/top100.json (더미데이터)
-    // 실제 랭킹 url에서 가져옴  
     getGlobalRanking: async () => {
         try {
-            // Real Backend API (Redis via Lambda)
-            // [Modified] Strict usage of HighScore Lambda URL
+            // [Local Strict HighScore URL]
             const targetUrl = API_HIGHSCORE_URL;
 
             if (!targetUrl) {
@@ -137,17 +143,13 @@ export const api = {
             if (!response.ok) throw new Error('Ranking fetch failed');
 
             const result = await response.json();
-            // result = { rankings: [{rank, user_id, score}, ...] }
-
-            // Transform for Frontend (Ranking.jsx expects top3, others, username, role)
             const list = result.rankings || [];
 
-            // Map backend fields to frontend fields
             const formattedList = list.map(item => ({
                 rank: item.rank,
-                username: item.user_id, // Backward compatibility
-                email: item.user_id,    // Assuming user_id is the email as per requirement
-                region: item.region || 'Unknown', // Region from backend
+                username: item.user_id,
+                email: item.user_id,
+                region: item.region || 'Unknown',
                 role: 'Guardian',
                 score: item.score
             }));
@@ -160,7 +162,7 @@ export const api = {
 
         } catch (error) {
             console.error("API Ranking Error:", error);
-            // Return empty structure on error so UI doesn't crash
+            api.sendLog("ERROR", "guest", { location: "getGlobalRanking", message: error.message });
             return { top3: [], others: [] };
         }
     },
@@ -187,4 +189,3 @@ export const api = {
         }
     }
 };
-
