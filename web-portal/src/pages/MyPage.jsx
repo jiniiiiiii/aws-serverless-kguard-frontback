@@ -7,6 +7,8 @@ import Button from '../components/ui/Button';
 import { Trophy, Users, Lock, Unlock, Zap, Coins, Calendar, MapPin, LogOut } from 'lucide-react';
 
 
+import REGION_MAP from '../data/regions.json';
+
 const MyPage = () => {
     const { user, logout } = useAuth();
 
@@ -22,8 +24,18 @@ const MyPage = () => {
                     api.getUserStats(token),
                     api.getUserCharacters(token)
                 ]);
+
+                // [Sync] unlocked status with DynamoDB data
+                // statsData.unlocked_characters is expected to be ["Char0", "Char1", ...]
+                const unlockedList = statsData.unlocked_characters || ["Char0"];
+
+                const mergedCharacters = charsData.map(char => ({
+                    ...char,
+                    isUnlocked: unlockedList.includes(char.id) || char.id === "Char0" // Char0 is always unlocked
+                }));
+
                 setStats(statsData);
-                setCharacters(charsData);
+                setCharacters(mergedCharacters);
             } catch (error) {
                 console.error(error);
             } finally {
@@ -52,7 +64,7 @@ const MyPage = () => {
                         style={{ width: '80px', height: '80px', borderRadius: '50%', border: '2px solid var(--color-accent-blue)' }}
                     />
                     <div>
-                        <h2 style={{ margin: 0, fontSize: '1.5rem' }}>{user.username}</h2>
+                        <h2 style={{ margin: 0, fontSize: '1.5rem' }}>{user.name}</h2>
                         <p style={{ margin: '0.25rem 0 0.5rem', color: 'var(--color-text-secondary)' }}>{user.email}</p>
 
                         {/* Info Badges */}
@@ -64,7 +76,7 @@ const MyPage = () => {
                             )}
                             {stats.region && (
                                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', color: 'var(--color-text-secondary)', background: 'rgba(255,255,255,0.05)', padding: '0.2rem 0.6rem', borderRadius: '1rem' }}>
-                                    <MapPin size={14} /> {stats.region}
+                                    <MapPin size={14} /> {REGION_MAP[stats.region] || stats.region}
                                 </span>
                             )}
                         </div>

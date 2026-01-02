@@ -122,7 +122,7 @@ export const api = {
     },
 
     // @@@ Global Ranking @@@
-    getGlobalRanking: async () => {
+    getGlobalRanking: async (region = null) => {
         try {
             // [Local Strict HighScore URL]
             const targetUrl = API_HIGHSCORE_URL;
@@ -132,12 +132,17 @@ export const api = {
                 return { top3: [], others: [] };
             }
 
+            const payload = { action: 'get_ranking' };
+            if (region) {
+                payload.region = region;
+            }
+
             const response = await fetch(targetUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ action: 'get_ranking' })
+                body: JSON.stringify(payload)
             });
 
             if (!response.ok) throw new Error('Ranking fetch failed');

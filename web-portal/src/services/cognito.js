@@ -17,8 +17,10 @@ export const cognitoLogin = (username, password) => {
         const authDetails = new AuthenticationDetails({ Username: username, Password: password });
         user.authenticateUser(authDetails, {
             onSuccess: (result) => {
-                console.log("Cognito Login Success!"); // Cognito Login Success 로그 -> 로그인 성공했다는 건 토큰을 발급했다는 것
-                resolve(result.getAccessToken().getJwtToken()); // 토큰 반환
+                console.log("Cognito Login Success!");
+                // [FIX] AccessToken에는 이메일 등 유저 정보가 없을 수 있음.
+                // 대신 IdToken을 사용하여 프론트엔드 세션용으로 활용함.
+                resolve(result.getIdToken().getJwtToken());
             },
             onFailure: (err) => {
                 console.error("Cognito Login Failed:", err); // Cognito Login Failed 로그

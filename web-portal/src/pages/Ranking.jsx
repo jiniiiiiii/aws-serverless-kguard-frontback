@@ -13,15 +13,23 @@ const Ranking = () => {
   const [myRank, setMyRank] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  
-useEffect(() => {
+  // Ranking Mode State
+  const [rankingMode, setRankingMode] = useState('global'); // 'global' | 'region'
+  const [selectedRegion, setSelectedRegion] = useState('ap-northeast-2'); // Default to Seoul
+
+
+  useEffect(() => {
     // 1. 페이지 접속 로그 (PAGE_VIEW)
     api.sendLog("PAGE_VIEW", "guest", { page: "Ranking" });
 
     const fetchRank = async () => {
+      setLoading(true); // Show loading on mode switch
       try {
+        // Mode에 따라 API 호출 파라미터 변경
+        const targetRegion = rankingMode === 'region' ? selectedRegion : null;
+
         // Parallel fetch for better performance
-        const promises = [api.getGlobalRanking()];
+        const promises = [api.getGlobalRanking(targetRegion)];
         if (user && user.email) {
           promises.push(api.getMyRank(user.email));
         }
@@ -30,27 +38,27 @@ useEffect(() => {
         const globalData = results[0];
         const myRankData = results[1] || null;
 
-        console.log("Ranking Data Fetched:", globalData);
+        console.log(`Ranking Data Fetched (${rankingMode}):`, globalData);
         setData(globalData);
         if (myRankData) {
           setMyRank(myRankData);
         }
       } catch (e) {
         console.error(e);
-        
+
         // 2. 에러 발생 로그 (ERROR)
-        api.sendLog("ERROR", "guest", { 
-            location: "RankingPage", 
-            message: e.message 
+        api.sendLog("ERROR", "guest", {
+          location: "RankingPage",
+          message: e.message
         });
-        
+
       } finally {
         setLoading(false);
       }
     };
 
     fetchRank();
-  }, [user]);
+  }, [user, rankingMode, selectedRegion]); // Re-fetch on mode/region change
 
   const getMedalColor = (rank) => {
     if (rank === 1) return 'var(--color-accent-gold)';
@@ -77,10 +85,76 @@ useEffect(() => {
       <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
         <h1 style={{ fontSize: '2.5rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
           <Trophy size={40} color="var(--color-accent-gold)" />
-          Global Ranking
+          {rankingMode === 'global' ? 'Global Ranking' : 'Regional Ranking'}
         </h1>
-        <p style={{ color: 'var(--color-text-secondary)' }}>Top Heroes of K-Guard</p>
-        <p style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginTop: '0.5rem' }}>
+        <p style={{ color: 'var(--color-text-secondary)' }}>
+          {rankingMode === 'global' ? 'Top Heroes of K-Guard' : `Heroes of ${REGION_MAP[selectedRegion] || selectedRegion}`}
+        </p>
+
+        {/* Toggle & Dropdown Controls */}
+        <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+          {/* Mode Tabs */}
+          <div style={{ background: 'var(--glass-bg)', padding: '0.4rem', borderRadius: '50px', display: 'inline-flex', gap: '0.5rem', border: '1px solid var(--glass-border)' }}>
+            <button
+              onClick={() => setRankingMode('global')}
+              style={{
+                background: rankingMode === 'global' ? 'var(--color-primary)' : 'transparent',
+                color: rankingMode === 'global' ? '#fff' : 'var(--color-text-secondary)',
+                border: 'none',
+                padding: '0.5rem 1.5rem',
+                borderRadius: '30px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                transition: 'all 0.3s ease'
+              }}
+            >
+              Global
+            </button>
+            <button
+              onClick={() => setRankingMode('region')}
+              style={{
+                background: rankingMode === 'region' ? 'var(--color-primary)' : 'transparent',
+                color: rankingMode === 'region' ? '#fff' : 'var(--color-text-secondary)',
+                border: 'none',
+                padding: '0.5rem 1.5rem',
+                borderRadius: '30px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                transition: 'all 0.3s ease'
+              }}
+            >
+              Region
+            </button>
+          </div>
+
+          {/* Region Dropdown (Visible only in Region Mode) */}
+          {rankingMode === 'region' && (
+            <motion.select
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              value={selectedRegion}
+              onChange={(e) => setSelectedRegion(e.target.value)}
+              style={{
+                background: 'var(--glass-bg)',
+                color: '#fff',
+                border: '1px solid var(--color-primary)',
+                padding: '0.6rem 1rem',
+                borderRadius: '10px',
+                cursor: 'pointer',
+                outline: 'none',
+                fontSize: '1rem'
+              }}
+            >
+              {Object.entries(REGION_MAP).map(([code, name]) => (
+                <option key={code} value={code} style={{ background: '#222' }}>
+                  {name}
+                </option>
+              ))}
+            </motion.select>
+          )}
+        </div>
+
+        <p style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginTop: '1rem' }}>
           Last Updated: {data.updatedAt ? new Date(data.updatedAt).toLocaleString() : '-'}
         </p>
       </div>

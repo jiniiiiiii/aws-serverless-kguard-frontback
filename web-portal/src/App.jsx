@@ -11,8 +11,12 @@ import './styles/index.css';
 
 // Protected Route Wrapper
 const RequireAuth = ({ children }) => {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const location = useLocation();
+
+  if (isLoading) {
+    return <div style={{ textAlign: 'center', marginTop: '4rem' }}>Loading Session...</div>;
+  }
 
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
