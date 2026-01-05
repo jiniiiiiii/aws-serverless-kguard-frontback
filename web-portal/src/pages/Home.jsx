@@ -43,7 +43,7 @@ const Home = () => {
                 setSelectedNotice({
                     ...meta,
                     id,
-                    content: markdownContent,
+                    content: markdownContent.replace(/<!--[\s\S]*?-->/g, ''),
                     isMarkdown: true
                 });
             } else {
