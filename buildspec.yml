@@ -46,6 +46,6 @@ artifacts:
 
 # [캐시 설정]
 # 다음 빌드 속도를 높이기 위해 유지할 파일들을 정의합니다.
-# cache:
-#   paths:
-#     - 'web-portal/node_modules/**/*' # npm 모듈을 캐시하면 다음 설치가 빨라집니다.
+cache:
+  paths:
+    - 'web-portal/node_modules/**/*' # npm 모듈을 캐시하면 다음 설치가 빨라집니다.
