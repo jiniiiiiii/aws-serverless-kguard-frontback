@@ -42,5 +42,56 @@
 *   긴 글을 JSON의 `\n` 으로 쓰는 건 힘듭니다.
 *   `react-markdown` 라이브러리를 설치하고, 공지 내용을 `.md` 파일로 분리하면 글쓰기가 훨씬 편해집니다.
 
+
 ### 3단계: 나중에 팀이 커지면 (DB 도입)
 *   비개발자 운영팀이 생기면 그때 DynamoDB + Admin Page를 만드시는 것을 추천합니다.
+
+---
+
+## 4. [New] Markdown 공지 시스템 설명서 (Manual)
+
+2026-01-05 기준, **Markdown 하이브리드 방식**이 적용되었습니다.
+
+### 4.1. 동작 원리 (Logic)
+1.  **목록 (`list/*.json`)**: 제목, 날짜, New 뱃지 여부 등 **"메타데이터"**만 관리합니다.
+2.  **본문 (`files/*.md`)**: 실제 깊은 내용과 이미지는 **"마크다운 파일"**로 관리합니다.
+3.  **프론트엔드 (`Home.jsx`)**:
+    *   사용자가 목록을 클릭하면 -> `api.getNoticeContent(id)` 호출
+    *   `/notices/files/notice_{id}.md` 파일을 찾습니다.
+    *   있으면? -> 마크다운 렌더링 (이미지 포함)
+    *   없으면? -> 기존 JSON의 `content` 필드를 보여줌 (하위 호환성)
+
+### 4.2. 새 공지사항 올리는 법 (Workflow)
+앞으로 새 글을 쓸 때는 아래 3단계만 따라하시면 됩니다.
+
+#### Step 1: 마크다운 작성
+`public/notices/files/notice_{번호}.md` 파일을 만듭니다. (예: `notice_5.md`)
+```markdown
+# 제목을 여기에 (없어도 됨)
+
+안녕하세요, 내용입니다.
+**강조**하고 싶은 내용도 넣고...
+
+![이미지설명](/notices/images/내이미지.jpg)
+```
+*   이미지가 필요하면 `public/notices/images/` 폴더에 넣고 경로를 `/notices/images/파일`로 잡으세요.
+
+#### Step 2: 목록에 등록
+`public/notices/list/page_1.json` (또는 해당 페이지)을 열어서 목록에 추가합니다.
+```json
+{
+    "id": 5,
+    "title": "다섯 번째 공지입니다",
+    "date": "2026-01-05",
+    "isNew": true
+    // "content" 필드는 이제 없어도 됩니다! (.md 파일이 있으니까요)
+}
+```
+
+#### Step 3: 배포 (Git Push)
+```bash
+git add public/notices
+git commit -m "Add notice #5"
+git push
+```
+-> 2분 뒤 웹사이트에 자동 반영됩니다! 🚀
