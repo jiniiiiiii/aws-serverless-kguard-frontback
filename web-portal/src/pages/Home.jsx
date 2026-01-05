@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import ReactMarkdown from 'react-markdown'; // [NEW] Markdown Renderer
 import { api } from '../services/api';
 import Card from '../components/ui/Card';
 import { Bell, ChevronRight, Calendar } from 'lucide-react';
@@ -32,8 +33,27 @@ const Home = () => {
     const handleNoticeClick = async (id) => {
         setDetailLoading(true);
         try {
-            const detail = await api.getNoticeDetail(id);
-            setSelectedNotice(detail);
+            // 1. Try to fetch Markdown content first
+            const markdownContent = await api.getNoticeContent(id);
+
+            // Get metadata from the list (title, date)
+            const meta = notices.find(n => n.id === id) || {};
+
+            if (markdownContent) {
+                setSelectedNotice({
+                    ...meta,
+                    id,
+                    content: markdownContent,
+                    isMarkdown: true
+                });
+            } else {
+                // 2. Fallback to legacy JSON detail
+                console.log("Markdown not found, trying JSON...");
+                const detail = await api.getNoticeDetail(id);
+                if (detail) {
+                    setSelectedNotice({ ...detail, isMarkdown: false });
+                }
+            }
         } catch (e) {
             console.error(e);
         } finally {
@@ -185,7 +205,6 @@ const Home = () => {
                                         color: 'var(--color-accent-blue)',
                                         fontSize: '0.85rem'
                                     }}>
-                                        {/* For mocked details, we might not have isNew in detail json, but we can assume logic or just show Notice */}
                                         Notice #{selectedNotice.id}
                                     </span>
 
@@ -197,13 +216,20 @@ const Home = () => {
                                         Posted on {selectedNotice.date}
                                     </p>
 
-                                    <div style={{ lineHeight: '1.6', fontSize: '1.1rem', color: 'var(--color-text-primary)' }}>
-                                        {selectedNotice.content ? selectedNotice.content.split('\n').map((line, i) => (
-                                            <React.Fragment key={i}>
-                                                {line}
-                                                <br />
-                                            </React.Fragment>
-                                        )) : 'No content'}
+                                    <div className="markdown-body" style={{ lineHeight: '1.6', fontSize: '1.1rem', color: 'var(--color-text-primary)' }}>
+                                        {selectedNotice.isMarkdown ? (
+                                            <ReactMarkdown>
+                                                {selectedNotice.content}
+                                            </ReactMarkdown>
+                                        ) : (
+                                            // Legacy JSON fallback
+                                            selectedNotice.content ? selectedNotice.content.split('\n').map((line, i) => (
+                                                <React.Fragment key={i}>
+                                                    {line}
+                                                    <br />
+                                                </React.Fragment>
+                                            )) : 'No content'
+                                        )}
                                     </div>
                                 </Card>
                             </motion.div>

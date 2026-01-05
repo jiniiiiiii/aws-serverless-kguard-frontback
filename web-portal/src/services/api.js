@@ -56,7 +56,7 @@ export const api = {
         }
     },
 
-    // Fetch Full Detail
+    // Fetch Full Detail (JSON)
     getNoticeDetail: async (id) => {
         try {
             const response = await fetch(`/notices/detail/${id}.json`);
@@ -66,7 +66,21 @@ export const api = {
             return data;
         } catch (error) {
             console.error("API Detail Error:", error);
-            api.sendLog("ERROR", "guest", { location: "getNoticeDetail", id: id, message: error.message });
+            // Ignore error for now, as we might be switching to Markdown
+            return null;
+        }
+    },
+
+    // [New] Fetch Markdown Content
+    getNoticeContent: async (id) => {
+        try {
+            const response = await fetch(`/notices/files/notice_${id}.md`);
+            if (!response.ok) throw new Error('Failed to fetch markdown');
+            const text = await response.text();
+            await delay(SIMULATE_DELAY);
+            return text;
+        } catch (error) {
+            console.warn("Markdown fetch failed, falling back to JSON detail...", error);
             return null;
         }
     },
