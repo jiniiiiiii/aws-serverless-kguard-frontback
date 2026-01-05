@@ -1,0 +1,51 @@
+version: 0.2
+# version: 0.2는 CodeBuild 표준 규격 버전입니다.
+
+phases:
+  # [1단계] 설치 (Install)
+  # 빌드 환경(리눅스 컨테이너)에 필요한 런타임과 의존성 패키지를 설치합니다.
+  install:
+    runtime-versions:
+      nodejs: 20  # Node.js 20 버전을 사용합니다.
+    commands:
+      - echo "Installing dependencies..."
+      - cd web-portal       # 프로젝트 폴더로 이동 (우린 web-portal 안에 package.json이 있으니까요)
+      - npm install         # package.json에 명시된 라이브러리들을 설치합니다.
+  
+  # [2단계] 사전 빌드 (Pre_build)
+  # 본격적인 빌드 전에 버전 확인이나 테스트, 린트(Lint) 등을 수행합니다.
+  pre_build:
+    commands:
+      - echo "Checking node version..."
+      - node -v            # 노드 버전이 맞는지 로그에 남깁니다.
+      - npm -v             # npm 버전도 확인합니다.
+
+  # [3단계] 빌드 (Build)
+  # 실제 컴파일이나 번들링(Webpack/Vite)을 수행하는 단계입니다.
+  build:
+    commands:
+      - echo "Build started on `date`"    # 빌드 시작 시간을 로그에 찍습니다.
+      - echo "Building the Web Portal..."
+      - npm run build      # Vite 빌드 명령어를 실행합니다. -> 'dist' 폴더가 생성됩니다.
+
+  # [4단계] 빌드 후처리 (Post_build)
+  # 빌드가 끝난 후 정리하거나 결과를 확인합니다.
+  post_build:
+    commands:
+      - echo "Build completed on `date`"  # 빌드 종료 시간을 로그에 찍습니다.
+      - echo "Listing build directory..." 
+      - ls -al dist        # 결과물(dist) 안에 파일이 잘 생겼는지 목록을 출력해 봅니다.
+
+# [결과물 아티팩트 설정]
+# 빌드 과정에서 생성된 파일 중, 다음 단계(Deploy)로 넘겨줄 파일들을 정의합니다.
+artifacts:
+  files:
+    - '**/*'              # dist 폴더 안의 모든 파일(하위 폴더 포함)을 선택합니다.
+  base-directory: web-portal/dist # 이 폴더를 기준으로 파일을 찾습니다.
+  name: WebPortalBuildArtifact    # 아티팩트의 이름을 지정합니다.
+
+# [캐시 설정]
+# 다음 빌드 속도를 높이기 위해 유지할 파일들을 정의합니다.
+cache:
+  paths:
+    - 'web-portal/node_modules/**/*' # npm 모듈을 캐시하면 다음 설치가 빨라집니다.

@@ -1,0 +1,38 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+    commands:
+      - echo "Installing dependencies..."
+      - cd web-portal
+      - npm install
+  
+  pre_build:
+    commands:
+      - echo "Checking node version..."
+      - node -v
+      - npm -v
+
+  build:
+    commands:
+      - echo "Build started on `date`"
+      - echo "Building the Web Portal..."
+      - npm run build
+
+  post_build:
+    commands:
+      - echo "Build completed on `date`"
+      - echo "Listing build directory..."
+      - ls -al dist
+
+artifacts:
+  files:
+    - '**/*'
+  base-directory: web-portal/dist
+  name: WebPortalBuildArtifact
+
+cache:
+  paths:
+    - 'web-portal/node_modules/**/*'
