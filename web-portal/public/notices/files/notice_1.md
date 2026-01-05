@@ -4,7 +4,7 @@
 안녕하세요! **K-Guard** 운영팀입니다.
 드디어 정식 런칭을 하게 되었습니다. 🎉
 
-![이벤트 배너](/notices/images/k-가드_icon(1).png)
+![이벤트 배너](/notices/images/k-가드_icon.png)
 
 ## 이벤트 기간
 * 시작: 2025-01-01
