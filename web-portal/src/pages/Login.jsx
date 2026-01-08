@@ -18,6 +18,34 @@ const Login = () => {
   const from = location.state?.from?.pathname || "/mypage";
 
   // 프론트 로그인 함수
+  // ... 위쪽 코드 생략 ...
+
+  // 프론트 로그인 함수
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const success = await login(email, password);
+      
+      if (success) {
+        // ▼▼▼ [추가할 코드] 로그인 성공 시 아이디 저장 ▼▼▼
+        localStorage.setItem('kguard_user_id', email);
+        // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+
+        navigate(from, { replace: true });
+      } else {
+        alert("Login Failed. Check your email/password.");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("An error occurred.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
