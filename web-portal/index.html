@@ -1,126 +1,85 @@
-<!doctype html>
-<html lang="ko">
+<script>
+    const API_URL = "https://hwuhh3d5d45nbsyu7beqld7twi0dfpsk.lambda-url.ap-northeast-2.on.aws/";
 
-<head>
-  <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>k-가드</title>
-</head>
+    function toggleChat() {
+        const box = document.getElementById('chat-box');
+        if (box.style.display === 'none' || box.style.display === '') {
+            box.style.display = 'flex';
+        } else {
+            box.style.display = 'none';
+        }
+    }
 
-<body>
-  <div id="root"></div>
-  <script type="module" src="/src/main.jsx"></script>
+    async function sendMessage() {
+        const input = document.getElementById('chat-input');
+        const logs = document.getElementById('chat-logs');
+        const msg = input.value;
+        if (!msg.trim()) return;
 
-  <div id="chat-widget" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; font-family: 'Courier New', monospace;">
-      
-      <button onclick="toggleChat()" style="width: 60px; height: 60px; border-radius: 50%; background: #000; border: 2px solid #00ff00; color: #00ff00; font-weight: bold; cursor: pointer; box-shadow: 0 0 15px rgba(0, 255, 0, 0.4);">CHAT</button>
-      
-      <div id="chat-box" style="display: none; position: absolute; bottom: 80px; right: 0; width: 350px; height: 500px; background: rgba(0, 0, 0, 0.95); border: 2px solid #00ff00; border-radius: 10px; flex-direction: column; box-shadow: 0 0 30px rgba(0, 255, 0, 0.2);">
-          
-          <div style="padding: 15px; border-bottom: 1px solid #00ff00; background: #051a05; color: #00ff00; font-weight: bold; display: flex; justify-content: space-between; align-items: center;">
-              <span>🟢 전술 기록관</span>
-              <span style="cursor: pointer; font-size: 20px;" onclick="toggleChat()">×</span>
-          </div>
+        logs.innerHTML += `<div style="text-align: right; margin: 8px 0; color: #aaa;">> ${msg}</div>`;
+        input.value = '';
+        logs.scrollTop = logs.scrollHeight;
 
-          <div id="chat-logs" style="flex: 1; padding: 15px; overflow-y: auto; color: #e0e0e0; font-size: 14px; line-height: 1.5;">
-              <div style="color: #00ff00; margin-bottom: 15px; border-bottom: 1px dashed #004400; padding-bottom: 10px;">
-                  [시스템] 전술 기록관 연결 성공.<br>
-                  신원을 확인합니다...
+        const loadingId = "loading-" + Date.now();
+        logs.innerHTML += `
+          <div id="${loadingId}" style="margin: 8px 0; display: flex; align-items: center;">
+              <div style="border: 1px solid #00ff00; border-radius: 20px; padding: 6px 15px; color: #00ff00; font-size: 13px; animation: blink 1s infinite; background: rgba(0, 255, 0, 0.1);">
+                  📡 통신 중...
               </div>
-          </div>
+          </div>`;
+        logs.scrollTop = logs.scrollHeight;
 
-          <div style="padding: 10px; border-top: 1px solid #00ff00; display: flex; background: #000;">
-              <input id="chat-input" type="text" placeholder="명령어 입력..." style="flex: 1; background: #111; color: #fff; border: 1px solid #333; padding: 10px; outline: none; border-radius: 4px;" onkeypress="if(event.keyCode==13) sendMessage()">
-              <button onclick="sendMessage()" style="margin-left: 8px; background: #004400; color: #00ff00; border: 1px solid #00ff00; cursor: pointer; padding: 0 15px; font-weight: bold; border-radius: 4px;">전송</button>
-          </div>
-      </div>
-  </div>
+        // 1. 로그인된 아이디 가져오기
+        const realUser = localStorage.getItem('kguard_user_id');
+        
+        // 2. [핵심] 로그인할 때 발급받은 '대화방 번호' 가져오기
+        // (만약 로그아웃 상태라 없으면 임시로 'guest-랜덤'을 씁니다)
+        const chatSessionId = localStorage.getItem('kguard_session_key') || "guest-" + Date.now();
 
-  <script>
-      const API_URL = "https://hwuhh3d5d45nbsyu7beqld7twi0dfpsk.lambda-url.ap-northeast-2.on.aws/";
+        if (!realUser) {
+            setTimeout(() => {
+                document.getElementById(loadingId).remove();
+                logs.innerHTML += `
+                  <div style="color: #ff3333; margin: 10px 0; text-shadow: 0 0 5px rgba(255,0,0,0.5);">
+                      ⚠️ <strong>[경고] 접근 거부</strong><br>
+                      정보가 없습니다. 어서 지키러 와주세요.
+                  </div>`;
+                logs.scrollTop = logs.scrollHeight;
+            }, 600);
+            return;
+        }
 
-      function toggleChat() {
-          const box = document.getElementById('chat-box');
-          if (box.style.display === 'none' || box.style.display === '') {
-              box.style.display = 'flex';
-          } else {
-              box.style.display = 'none';
-          }
-      }
+        try {
+            const res = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    message: msg, 
+                    user_id: realUser,        // 내 아이디 (점수 조회용)
+                    session_id: chatSessionId // 대화방 번호 (로그아웃 전까지 유지됨)
+                })
+            });
+            
+            const data = await res.json();
+            document.getElementById(loadingId).remove();
+            
+            const formattedReply = data.reply.replace(/\n/g, '<br>');
+            logs.innerHTML += `<div style="color: #00ff00; margin: 10px 0; text-shadow: 0 0 5px rgba(0,255,0,0.3);">${formattedReply}</div>`;
 
-      async function sendMessage() {
-          const input = document.getElementById('chat-input');
-          const logs = document.getElementById('chat-logs');
-          const msg = input.value;
-          if (!msg.trim()) return;
+        } catch (e) {
+            document.getElementById(loadingId).remove();
+            console.error(e);
+            logs.innerHTML += `<div style="color: red; margin: 5px 0;">[시스템 오류] 통신 실패.</div>`;
+        }
+        logs.scrollTop = logs.scrollHeight;
+    }
 
-          // 1. 내 메시지 표시
-          logs.innerHTML += `<div style="text-align: right; margin: 8px 0; color: #aaa;">> ${msg}</div>`;
-          input.value = '';
-          logs.scrollTop = logs.scrollHeight;
-
-          // 2. 로딩 표시 (원형 말풍선)
-          const loadingId = "loading-" + Date.now();
-          logs.innerHTML += `
-            <div id="${loadingId}" style="margin: 8px 0; display: flex; align-items: center;">
-                <div style="border: 1px solid #00ff00; border-radius: 20px; padding: 6px 15px; color: #00ff00; font-size: 13px; animation: blink 1s infinite; background: rgba(0, 255, 0, 0.1);">
-                    📡 신원 조회 중...
-                </div>
-            </div>`;
-          logs.scrollTop = logs.scrollHeight;
-
-          // 3. [핵심 변경] 로그인 여부 체크
-          // 브라우저에 저장된 아이디가 있는지 확인합니다.
-          const myId = localStorage.getItem('kguard_user_id');
-
-          // ★ 로그인이 안 되어 있으면(아이디가 없으면) 칼같이 거절합니다.
-          if (!myId) {
-              setTimeout(() => {
-                  document.getElementById(loadingId).remove();
-                  logs.innerHTML += `
-                    <div style="color: #ff3333; margin: 10px 0; text-shadow: 0 0 5px rgba(255,0,0,0.5);">
-                        ⚠️ <strong>[경고] 접근 거부</strong><br>
-                        정보가 없습니다. 어서 지키러 와주세요.
-                    </div>`;
-                  logs.scrollTop = logs.scrollHeight;
-              }, 600); // 0.6초 뒤에 거절 메시지 출력
-              return; // 서버로 전송 안 하고 여기서 끝냄
-          }
-
-          // 4. 로그인이 되어 있으면 서버로 전송
-          try {
-              const res = await fetch(API_URL, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ 
-                      message: msg, 
-                      user_id: myId // 로그인한 아이디 사용
-                  })
-              });
-              
-              const data = await res.json();
-              document.getElementById(loadingId).remove();
-              
-              const formattedReply = data.reply.replace(/\n/g, '<br>');
-              logs.innerHTML += `<div style="color: #00ff00; margin: 10px 0; text-shadow: 0 0 5px rgba(0,255,0,0.3);">${formattedReply}</div>`;
-
-          } catch (e) {
-              document.getElementById(loadingId).remove();
-              console.error(e);
-              logs.innerHTML += `<div style="color: red; margin: 5px 0;">[시스템 오류] 통신 실패.</div>`;
-          }
-          logs.scrollTop = logs.scrollHeight;
-      }
-
-      const style = document.createElement('style');
-      style.innerHTML = `
-          @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-          ::-webkit-scrollbar { width: 8px; }
-          ::-webkit-scrollbar-track { background: #000; }
-          ::-webkit-scrollbar-thumb { background: #004400; border-radius: 4px; }
-      `;
-      document.head.appendChild(style);
-  </script>
-</body>
-</html>
+    const style = document.createElement('style');
+    style.innerHTML = `
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #004400; border-radius: 4px; }
+    `;
+    document.head.appendChild(style);
+</script>
