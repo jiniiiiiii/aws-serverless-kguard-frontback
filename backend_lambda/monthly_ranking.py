@@ -68,8 +68,8 @@ def lambda_handler(event, context):
             if not target_month:
                 target_month = datetime.now().strftime('%Y-%m')
 
-            # ranking_system.py uses "rank:global" for the settled monthly ranking.
-            redis_key = RANKING_KEY
+            # Read from the specific monthly key
+            redis_key = f"rank:monthly:{target_month}"
 
             if not user_id:
                 return {"statusCode": 400, "headers": headers, "body": json.dumps({"error": "Missing user_id"})}
@@ -88,7 +88,7 @@ def lambda_handler(event, context):
                     "rank": my_rank,
                     "score": my_score,
                     "month": target_month,
-                    "source": "Redis(rank:global)"
+                    "source": f"Redis(rank:monthly:{target_month})"
                 }),
                 "isBase64Encoded": False
             }
@@ -107,13 +107,23 @@ def lambda_handler(event, context):
                 last_month_obj = first - timedelta(days=1)
                 target_month = last_month_obj.strftime("%Y-%m")
 
-            # ranking_system.py populates "rank:global" with Last Month's certified data.
-            # We read from that key regardless of target_month param, 
-            # because that is where the monthly data lives.
-            redis_key = RANKING_KEY
+            # ranking_system.py populates "rank:global" for Settlement.
+            # But for "Monthly Ranking" (Live & History), we should read the specific month key.
+            # This allows users to see real-time updates for the current month.
+            redis_key = f"rank:monthly:{target_month}"
 
-            # Range 조회
+            # 1. Try Specific Monthly Key first (Live Data)
+            # redis_key is already set to f"rank:monthly:{target_month}" above
             top_list = r.zrevrange(redis_key, 0, 99, withscores=True)
+            source_info = f"Data from Redis {redis_key}"
+
+            # 2. Fallback: If empty, try rank:global (Settled Data)
+            if not top_list:
+                redis_key = RANKING_KEY
+                top_list = r.zrevrange(redis_key, 0, 99, withscores=True)
+                if top_list:
+                    source_info = f"Data from Redis {redis_key} (Fallback)"
+
             rankings = []
             for idx, (uid, sc) in enumerate(top_list):
                 rankings.append({
@@ -128,7 +138,7 @@ def lambda_handler(event, context):
                 "body": json.dumps({
                     "rankings": rankings, 
                     "month": target_month,
-                    "info": "Data from Redis rank:global (Settled)"
+                    "info": source_info
                 }), # ensure_ascii=True is default, safe for API Gateway
                 "isBase64Encoded": False
             }
