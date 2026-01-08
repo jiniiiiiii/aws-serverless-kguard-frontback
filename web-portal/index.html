@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="ko">
 
 <head>
   <meta charset="UTF-8" />
@@ -14,25 +14,25 @@
 
   <div id="chat-widget" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; font-family: 'Courier New', monospace;">
       
-      <button onclick="toggleChat()" style="width: 60px; height: 60px; border-radius: 50%; background: #000; border: 2px solid #00ff00; color: #00ff00; font-weight: bold; cursor: pointer; box-shadow: 0 0 15px rgba(0, 255, 0, 0.4); transition: transform 0.2s;">CHAT</button>
+      <button onclick="toggleChat()" style="width: 60px; height: 60px; border-radius: 50%; background: #000; border: 2px solid #00ff00; color: #00ff00; font-weight: bold; cursor: pointer; box-shadow: 0 0 15px rgba(0, 255, 0, 0.4);">CHAT</button>
       
       <div id="chat-box" style="display: none; position: absolute; bottom: 80px; right: 0; width: 350px; height: 500px; background: rgba(0, 0, 0, 0.95); border: 2px solid #00ff00; border-radius: 10px; flex-direction: column; box-shadow: 0 0 30px rgba(0, 255, 0, 0.2);">
           
           <div style="padding: 15px; border-bottom: 1px solid #00ff00; background: #051a05; color: #00ff00; font-weight: bold; display: flex; justify-content: space-between; align-items: center;">
-              <span>🟢 TACTICAL ARCHIVIST</span>
+              <span>🟢 전술 기록관</span>
               <span style="cursor: pointer; font-size: 20px;" onclick="toggleChat()">×</span>
           </div>
 
           <div id="chat-logs" style="flex: 1; padding: 15px; overflow-y: auto; color: #e0e0e0; font-size: 14px; line-height: 1.5;">
               <div style="color: #00ff00; margin-bottom: 15px; border-bottom: 1px dashed #004400; padding-bottom: 10px;">
-                  [SYSTEM] 전술 기록관 연결 성공.<br>
-                  생존자, 무엇을 알고 싶은가?
+                  [시스템] 전술 기록관 연결 성공.<br>
+                  신원을 확인합니다...
               </div>
           </div>
 
           <div style="padding: 10px; border-top: 1px solid #00ff00; display: flex; background: #000;">
               <input id="chat-input" type="text" placeholder="명령어 입력..." style="flex: 1; background: #111; color: #fff; border: 1px solid #333; padding: 10px; outline: none; border-radius: 4px;" onkeypress="if(event.keyCode==13) sendMessage()">
-              <button onclick="sendMessage()" style="margin-left: 8px; background: #004400; color: #00ff00; border: 1px solid #00ff00; cursor: pointer; padding: 0 15px; font-weight: bold; border-radius: 4px;">SEND</button>
+              <button onclick="sendMessage()" style="margin-left: 8px; background: #004400; color: #00ff00; border: 1px solid #00ff00; cursor: pointer; padding: 0 15px; font-weight: bold; border-radius: 4px;">전송</button>
           </div>
       </div>
   </div>
@@ -60,28 +60,42 @@
           input.value = '';
           logs.scrollTop = logs.scrollHeight;
 
-          // 2. [수정됨] 로딩 표시 (동그란 말풍선 스타일 + 멘트 변경)
+          // 2. 로딩 표시 (원형 말풍선)
           const loadingId = "loading-" + Date.now();
           logs.innerHTML += `
             <div id="${loadingId}" style="margin: 8px 0; display: flex; align-items: center;">
-                <div style="border: 1px solid #00ff00; border-radius: 20px; padding: 5px 15px; color: #00ff00; font-size: 12px; animation: blink 1s infinite; background: rgba(0, 255, 0, 0.1);">
-                    📡 [통신 중...]
+                <div style="border: 1px solid #00ff00; border-radius: 20px; padding: 6px 15px; color: #00ff00; font-size: 13px; animation: blink 1s infinite; background: rgba(0, 255, 0, 0.1);">
+                    📡 신원 조회 중...
                 </div>
             </div>`;
           logs.scrollTop = logs.scrollHeight;
 
-          // 3. [기능 추가] 로그인된 아이디 가져오기
-          // ★ React 로그인 코드에서 localStorage.setItem('kguard_user_id', '아이디')를 해줘야 작동합니다.
-          // 저장된 게 없으면 'dudgns901'을 기본값으로 씁니다.
-          const myId = localStorage.getItem('kguard_user_id') || "dudgns901";
+          // 3. [핵심 변경] 로그인 여부 체크
+          // 브라우저에 저장된 아이디가 있는지 확인합니다.
+          const myId = localStorage.getItem('kguard_user_id');
 
+          // ★ 로그인이 안 되어 있으면(아이디가 없으면) 칼같이 거절합니다.
+          if (!myId) {
+              setTimeout(() => {
+                  document.getElementById(loadingId).remove();
+                  logs.innerHTML += `
+                    <div style="color: #ff3333; margin: 10px 0; text-shadow: 0 0 5px rgba(255,0,0,0.5);">
+                        ⚠️ <strong>[경고] 접근 거부</strong><br>
+                        정보가 없습니다. 어서 지키러 와주세요.
+                    </div>`;
+                  logs.scrollTop = logs.scrollHeight;
+              }, 600); // 0.6초 뒤에 거절 메시지 출력
+              return; // 서버로 전송 안 하고 여기서 끝냄
+          }
+
+          // 4. 로그인이 되어 있으면 서버로 전송
           try {
               const res = await fetch(API_URL, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ 
                       message: msg, 
-                      user_id: myId // 자동으로 가져온 아이디 사용
+                      user_id: myId // 로그인한 아이디 사용
                   })
               });
               
@@ -94,7 +108,7 @@
           } catch (e) {
               document.getElementById(loadingId).remove();
               console.error(e);
-              logs.innerHTML += `<div style="color: red; margin: 5px 0;">[SYSTEM ERROR] 통신 실패.</div>`;
+              logs.innerHTML += `<div style="color: red; margin: 5px 0;">[시스템 오류] 통신 실패.</div>`;
           }
           logs.scrollTop = logs.scrollHeight;
       }
