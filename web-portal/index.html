@@ -11,6 +11,89 @@
 <body>
   <div id="root"></div>
   <script type="module" src="/src/main.jsx"></script>
-</body>
 
+  <div id="chat-widget" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;">
+      <button onclick="toggleChat()" style="width: 60px; height: 60px; border-radius: 50%; background: #000; border: 2px solid #00ff00; color: #00ff00; font-weight: bold; cursor: pointer; box-shadow: 0 0 10px #00ff00;">CHAT</button>
+      
+      <div id="chat-box" style="display: none; position: absolute; bottom: 80px; right: 0; width: 320px; height: 450px; background: rgba(0, 0, 0, 0.95); border: 2px solid #00ff00; border-radius: 10px; flex-direction: column; box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);">
+          
+          <div style="padding: 10px; border-bottom: 1px solid #00ff00; color: #00ff00; font-weight: bold; background: #111; display: flex; justify-content: space-between;">
+              <span>🟢 TACTICAL ARCHIVIST</span>
+              <span style="cursor: pointer;" onclick="toggleChat()">[X]</span>
+          </div>
+
+          <div id="chat-logs" style="flex: 1; padding: 15px; overflow-y: auto; color: #eee; font-family: monospace; font-size: 14px;">
+              <div style="color: #00ff00; margin-bottom: 10px;">
+                  [SYSTEM] 전술 기록관 연결 성공.<br>
+                  생존자, 신원을 밝혀라. (예: dudgns901)
+              </div>
+          </div>
+
+          <div style="padding: 10px; border-top: 1px solid #00ff00; display: flex; background: #111;">
+              <input id="chat-input" type="text" placeholder="명령어 입력..." style="flex: 1; background: #222; color: #fff; border: 1px solid #444; padding: 8px; outline: none;" onkeypress="if(event.keyCode==13) sendMessage()">
+              <button onclick="sendMessage()" style="margin-left: 5px; background: #004400; color: #00ff00; border: 1px solid #00ff00; cursor: pointer; padding: 0 15px; font-weight: bold;">SEND</button>
+          </div>
+      </div>
+  </div>
+
+  <script>
+      // ★ 사용자님이 주신 람다 주소 적용 완료!
+      const API_URL = "https://hwuhh3d5d45nbsyu7beqld7twi0dfpsk.lambda-url.ap-northeast-2.on.aws/";
+
+      function toggleChat() {
+          const box = document.getElementById('chat-box');
+          if (box.style.display === 'none' || box.style.display === '') {
+              box.style.display = 'flex';
+          } else {
+              box.style.display = 'none';
+          }
+      }
+
+      async function sendMessage() {
+          const input = document.getElementById('chat-input');
+          const logs = document.getElementById('chat-logs');
+          const msg = input.value;
+          if (!msg.trim()) return;
+
+          // 1. 내 메시지 표시
+          logs.innerHTML += `<div style="text-align: right; margin: 5px 0; color: #aaa;">> ${msg}</div>`;
+          input.value = '';
+          logs.scrollTop = logs.scrollHeight;
+
+          // 2. 로딩 표시
+          const loadingId = "loading-" + Date.now();
+          logs.innerHTML += `<div id="${loadingId}" style="color: #00ff00; margin: 5px 0;">[분석 중...]</div>`;
+          logs.scrollTop = logs.scrollHeight;
+
+          try {
+              // 3. 서버 전송
+              const res = await fetch(API_URL, {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({ 
+                      message: msg, 
+                      user_id: "dudgns901" // 실제로는 로그인된 ID를 넣어야 함
+                  })
+              });
+              
+              const data = await res.json();
+              
+              // 4. 로딩 제거 및 답변 표시
+              document.getElementById(loadingId).remove();
+              
+              // 줄바꿈 문자(\n)를 HTML 태그(<br>)로 변환
+              const formattedReply = data.reply.replace(/\n/g, '<br>');
+              logs.innerHTML += `<div style="color: #00ff00; margin: 10px 0;">${formattedReply}</div>`;
+
+          } catch (e) {
+              document.getElementById(loadingId).remove();
+              console.error(e);
+              logs.innerHTML += `<div style="color: red; margin: 5px 0;">[SYSTEM ERROR] 통신 실패.</div>`;
+          }
+          logs.scrollTop = logs.scrollHeight;
+      }
+  </script>
+  </body>
 </html>
