@@ -204,8 +204,13 @@ const Ranking = () => {
           )}
         </div>
 
-        <p style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginTop: '1rem' }}>
-          Last Updated: {data.updatedAt ? new Date(data.updatedAt).toLocaleString() : '-'}
+        {rankingMode !== 'monthly' && (
+          <p style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginTop: '1rem' }}>
+            Last Updated: {data.updatedAt ? new Date(data.updatedAt).toLocaleString() : '-'}
+          </p>
+        )}
+        <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.5rem' }}>
+          * 최초 불러오기시 시간이 걸릴 수 있습니다.
         </p>
       </div>
 

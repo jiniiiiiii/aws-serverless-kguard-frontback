@@ -29,18 +29,27 @@ def lambda_handler(event, context):
         "Access-Control-Allow-Headers": "Content-Type"
     }
     
-    # 0. Preflight
+    # 0. Debug Log
+    #print(f"DEBUG_EVENT: {json.dumps(event, default=str)}")
+
+    # 1. Preflight
     if event.get('httpMethod') == 'OPTIONS':
         return {"statusCode": 200, "headers": headers, "body": "OK"}
 
     try:
         r = get_redis_connection()
-        # Body Parsing
+        
+        # 2. Body Parsing (Robust)
+        body_str = event.get('body') or '{}'
         try:
-            body = json.loads(event.get('body', '{}'))
-            if isinstance(body, str):
-                body = json.loads(body)
-        except:
+            if isinstance(body_str, dict):
+                body = body_str # Proxy OFF인 경우 대비
+            else:
+                body = json.loads(body_str)
+                if isinstance(body, str): 
+                    body = json.loads(body) # Double-serialized 대비
+        except Exception as e:
+            print(f"Body Parsing Error: {e}")
             body = {}
             
         action = body.get('action', 'update_score') 
@@ -80,7 +89,8 @@ def lambda_handler(event, context):
                     "score": my_score,
                     "month": target_month,
                     "source": "Redis(rank:global)"
-                }, ensure_ascii=False)
+                }),
+                "isBase64Encoded": False
             }
 
         # ==========================================
@@ -119,7 +129,8 @@ def lambda_handler(event, context):
                     "rankings": rankings, 
                     "month": target_month,
                     "info": "Data from Redis rank:global (Settled)"
-                }, ensure_ascii=False)
+                }), # ensure_ascii=True is default, safe for API Gateway
+                "isBase64Encoded": False
             }
 
         # ==========================================
