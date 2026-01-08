@@ -6,7 +6,6 @@ import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { Trophy, Users, Lock, Unlock, Zap, Coins, Calendar, MapPin, LogOut } from 'lucide-react';
 
-
 import REGION_MAP from '../data/regions.json';
 
 const MyPage = () => {
@@ -25,13 +24,11 @@ const MyPage = () => {
                     api.getUserCharacters(token)
                 ]);
 
-                // [Sync] unlocked status with DynamoDB data
-                // statsData.unlocked_characters is expected to be ["Char0", "Char1", ...]
                 const unlockedList = statsData.unlocked_characters || ["Char0"];
 
                 const mergedCharacters = charsData.map(char => ({
                     ...char,
-                    isUnlocked: unlockedList.includes(char.id) || char.id === "Char0" // Char0 is always unlocked
+                    isUnlocked: unlockedList.includes(char.id) || char.id === "Char0"
                 }));
 
                 setStats(statsData);
@@ -44,6 +41,19 @@ const MyPage = () => {
         };
         fetchData();
     }, []);
+
+    // ▼▼▼ [추가된 함수] 로그아웃 시 챗봇 데이터 초기화 ▼▼▼
+    const handleLogout = () => {
+        // 1. 챗봇이 기억하던 아이디 삭제
+        localStorage.removeItem('kguard_user_id');
+        
+        // 2. 대화방 번호 삭제 (이걸 지워야 다음 로그인 때 대화가 리셋됨)
+        localStorage.removeItem('kguard_session_key');
+        
+        // 3. 원래 로그아웃 기능 실행
+        logout();
+    };
+    // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
     if (loading || !user) {
         return <div className="container" style={{ textAlign: 'center', marginTop: '4rem' }}>Loading My Page...</div>;
@@ -83,7 +93,9 @@ const MyPage = () => {
                     </div>
                     <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
                         <Button variant="outline">Edit Profile</Button>
-                        <Button variant="ghost" onClick={logout} style={{ color: 'var(--color-danger)' }}>
+                        
+                        {/* ▼▼▼ [수정됨] onClick 이벤트를 handleLogout으로 변경 ▼▼▼ */}
+                        <Button variant="ghost" onClick={handleLogout} style={{ color: 'var(--color-danger)' }}>
                             <LogOut size={18} style={{ marginRight: '0.5rem' }} /> Logout
                         </Button>
                     </div>
@@ -193,7 +205,6 @@ const MyPage = () => {
             </div>
         </div>
     );
-
 };
 
 export default MyPage;
