@@ -23,17 +23,13 @@ const Login = () => {
     setIsLoading(true);
 
     try {
+      // 1. 로그인 시도
       const success = await login(email, password);
       
       if (success) {
-        // ▼▼▼ [수정됨] 챗봇 연동을 위한 핵심 코드 2줄 ▼▼▼
-        
-        // 1. 챗봇이 '누구인지' 알 수 있게 아이디 저장
+        // ▼▼▼ [챗봇 연동] 로그인 성공 시 아이디와 세션키 저장 ▼▼▼
         localStorage.setItem('kguard_user_id', email);
-        
-        // 2. 로그인 할 때마다 '새로운 대화방 번호' 생성 (이전 대화 리셋용)
         localStorage.setItem('kguard_session_key', 'sess-' + Date.now());
-        
         // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
         navigate(from, { replace: true });
@@ -42,7 +38,7 @@ const Login = () => {
       }
     } catch (error) {
       console.error(error);
-      alert("An error occurred.");
+      alert("An error occurred during login.");
     } finally {
       setIsLoading(false);
     }
