@@ -14,8 +14,9 @@ const Ranking = () => {
   const [loading, setLoading] = useState(true);
 
   // Ranking Mode State
-  const [rankingMode, setRankingMode] = useState('global'); // 'global' | 'region'
+  const [rankingMode, setRankingMode] = useState('global'); // 'global' | 'monthly' | 'region'
   const [selectedRegion, setSelectedRegion] = useState('ap-northeast-2'); // Default to Seoul
+  const [displayMonth, setDisplayMonth] = useState(''); // For Monthly Title
 
 
   useEffect(() => {
@@ -25,23 +26,53 @@ const Ranking = () => {
     const fetchRank = async () => {
       setLoading(true); // Show loading on mode switch
       try {
-        // Mode에 따라 API 호출 파라미터 변경
-        const targetRegion = rankingMode === 'region' ? selectedRegion : null;
+        if (rankingMode === 'monthly') {
+          // [Monthly] Default to Last Month
+          const today = new Date();
+          const firstOfThisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+          const lastMonthObj = new Date(firstOfThisMonth - 1); // Last day of prev month
+          const targetMonthStr = lastMonthObj.toISOString().slice(0, 7); // "YYYY-MM"
 
-        // Parallel fetch for better performance
-        const promises = [api.getGlobalRanking(targetRegion)];
-        if (user && user.email) {
-          promises.push(api.getMyRank(user.email));
-        }
+          setDisplayMonth(targetMonthStr);
 
-        const results = await Promise.all(promises);
-        const globalData = results[0];
-        const myRankData = results[1] || null;
+          // Parallel fetch (Global/Monthly separate)
+          const promises = [api.getMonthlyRanking(targetMonthStr)];
 
-        console.log(`Ranking Data Fetched (${rankingMode}):`, globalData);
-        setData(globalData);
-        if (myRankData) {
-          setMyRank(myRankData);
+          // Note: getMyRank (Redis) also needs to support monthly if we want "My Rank" in monthly tab.
+          // Current api.getMyRank is for Global Highscore (DynamoDB).
+          // Monthly specific "My Rank" is not yet hooked up to a separate UI logic, 
+          // but let's try to fetch it if user exists.
+          // For now, let's just fetch the list. 
+          // If you need "My Monthly Rank", api.getMyRank needs updates or a new api call.
+          // Based on api.js update, we created getMonthlyRanking which returns list.
+          // Let's assume for now we only show the list.
+
+          const results = await Promise.all(promises);
+          const monthlyData = results[0];
+
+          console.log(`Ranking Data Fetched (Monthly):`, monthlyData);
+          setData(monthlyData);
+          setMyRank(null); // Reset My Rank for monthly for now (unless we implement monthly my rank)
+
+        } else {
+          // [Global / Region]
+          const targetRegion = rankingMode === 'region' ? selectedRegion : null;
+
+          // Parallel fetch for better performance
+          const promises = [api.getGlobalRanking(targetRegion)];
+          if (user && user.email) {
+            promises.push(api.getMyRank(user.email));
+          }
+
+          const results = await Promise.all(promises);
+          const globalData = results[0];
+          const myRankData = results[1] || null;
+
+          console.log(`Ranking Data Fetched (${rankingMode}):`, globalData);
+          setData(globalData);
+          if (myRankData) {
+            setMyRank(myRankData);
+          }
         }
       } catch (e) {
         console.error(e);
@@ -85,10 +116,14 @@ const Ranking = () => {
       <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
         <h1 style={{ fontSize: '2.5rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
           <Trophy size={40} color="var(--color-accent-gold)" />
-          {rankingMode === 'global' ? 'Global Ranking' : 'Regional Ranking'}
+          {rankingMode === 'global' && 'Global Ranking'}
+          {rankingMode === 'monthly' && 'Monthly Hall of Fame'}
+          {rankingMode === 'region' && 'Regional Ranking'}
         </h1>
         <p style={{ color: 'var(--color-text-secondary)' }}>
-          {rankingMode === 'global' ? 'Top Heroes of K-Guard' : `Heroes of ${REGION_MAP[selectedRegion] || selectedRegion}`}
+          {rankingMode === 'global' && 'Top Heroes of K-Guard'}
+          {rankingMode === 'monthly' && `Results for ${displayMonth} (Last Month)`}
+          {rankingMode === 'region' && `Heroes of ${REGION_MAP[selectedRegion] || selectedRegion}`}
         </p>
 
         {/* Toggle & Dropdown Controls */}
@@ -109,6 +144,21 @@ const Ranking = () => {
               }}
             >
               Global
+            </button>
+            <button
+              onClick={() => setRankingMode('monthly')}
+              style={{
+                background: rankingMode === 'monthly' ? 'var(--color-primary)' : 'transparent',
+                color: rankingMode === 'monthly' ? '#fff' : 'var(--color-text-secondary)',
+                border: 'none',
+                padding: '0.5rem 1.5rem',
+                borderRadius: '30px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                transition: 'all 0.3s ease'
+              }}
+            >
+              Monthly
             </button>
             <button
               onClick={() => setRankingMode('region')}

@@ -6,6 +6,7 @@ const SIMULATE_DELAY = 500; // ms
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 const API_RANKING_URL = import.meta.env.VITE_API_RANKING_URL || '';
 const API_HIGHSCORE_URL = import.meta.env.VITE_API_HIGHSCORE_RANKING_URL || '';
+const API_MONTHLY_RANKING_URL = import.meta.env.VITE_API_MONTHLY_RANKING_URL || '';
 
 // [Remote] 로그 수집용 람다 API 주소
 const LOG_API_URL = "https://0v71llt3ta.execute-api.ap-northeast-2.amazonaws.com/default/KG-log-lambda-ap-ne-2";
@@ -205,6 +206,52 @@ export const api = {
         } catch (e) {
             console.error("Rank fetch failed:", e);
             return null;
+        }
+    },
+
+    // [New] Monthly Ranking
+    getMonthlyRanking: async (targetMonth) => {
+        try {
+            const targetUrl = API_MONTHLY_RANKING_URL;
+            if (!targetUrl) {
+                console.warn("API_MONTHLY_RANKING_URL not defined");
+                return { top3: [], others: [], month: targetMonth };
+            }
+
+            const response = await fetch(targetUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'get_ranking',
+                    target_month: targetMonth // "YYYY-MM"
+                })
+            });
+
+            if (!response.ok) throw new Error('Monthly ranking fetch failed');
+
+            const result = await response.json();
+            const list = result.rankings || [];
+
+            // Standardize format
+            const formattedList = list.map(item => ({
+                rank: item.rank,
+                username: item.user_id,
+                email: item.user_id,
+                region: 'Unknown', // Redis simple schema doesn't have region
+                role: 'Guardian',
+                score: item.score
+            }));
+
+            return {
+                month: result.month,
+                updatedAt: new Date().toISOString(),
+                top3: formattedList.slice(0, 3),
+                others: formattedList.slice(3)
+            };
+
+        } catch (error) {
+            console.error("Monthly Ranking API Error:", error);
+            return { top3: [], others: [], month: targetMonth };
         }
     }
 };

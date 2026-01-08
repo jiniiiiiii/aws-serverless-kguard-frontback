@@ -1,106 +1,49 @@
-# Real Cognito 로그인 구현 계획
+# 월간 랭킹 구현 계획
 
-## Goal Description
-사용자가 실제 AWS Cognito를 통해 인증하고, 발급받은 JWT 토큰을 프론트엔드에서 저장·전송하며, 백엔드(Lambda)에서 토큰을 검증해 MyPage 데이터를 안전하게 제공하도록 시스템을 구축합니다.
+## 목표
+랭킹 페이지에 '월간 랭킹' 탭을 추가하고, 별도의 Lambda 함수(`monthly_ranking.py`)와 Redis를 활용하여 월간 최고 점수를 관리합니다.
 
-## User Review Required
-- **Cognito User Pool 설정**: User Pool 이름, 도메인, App Client 설정 등은 고객 환경에 맞게 지정해야 합니다. (예: `kg-user-pool`, `kg-app-client`).
-- **프론트엔드 의존성**: `amazon-cognito-identity-js`와 `jwt-decode`를 추가할 예정이며, 프로젝트에 이미 다른 인증 라이브러리가 있으면 충돌 여부를 확인해 주세요.
-- **환경 변수**: Lambda와 프론트엔드에 필요한 환경 변수(`COGNITO_USER_POOL_ID`, `COGNITO_CLIENT_ID`, `COGNITO_REGION`)를 추가해야 합니다. 이름과 값이 정확한지 확인 바랍니다.
+## 사용자 검토 필요 사항
+> [!IMPORTANT]
+> **`monthly_ranking.py` Lambda 분리**:
+> 사용자 요청에 따라 월간 랭킹 로직을 `monthly_ranking.py`로 완전히 분리합니다.
+> 이 Lambda는 별도의 API Gateway 엔드포인트(예: `VITE_API_MONTHLY_RANKING_URL`)에 연결되어야 합니다.
+> 점수 기록 시, 기존 로직과 별도로 이 Lambda도 호출해주어야 데이터가 쌓입니다 (또는 기존 Lambda에서 비동기 호출).
+> **이번 구현에서는 클라이언트(또는 테스트 스크립트)가 점수 저장 시 이 Lambda도 호출한다고 가정하고 구현합니다.**
 
-## Proposed Changes
----
-### Frontend (React)
-#### [MODIFY] src/contexts/AuthContext.jsx
-- `amazon-cognito-identity-js`를 사용해 Cognito User Pool에 로그인 요청 구현.
-- 로그인 성공 시 `AuthenticationResult.AccessToken`을 `localStorage.setItem('auth_token', token)`에 저장.
-- 로그아웃 시 토큰 삭제.
-- 에러 처리 및 UI 피드백 추가.
+## 변경 제안
 
-#### [NEW] src/services/cognito.js
-```javascript
-import { CognitoUserPool, CognitoUser, AuthenticationDetails } from 'amazon-cognito-identity-js';
+### 백엔드 (`backend_lambda`)
 
-const poolData = {
-  UserPoolId: process.env.VITE_COGNITO_USER_POOL_ID,
-  ClientId: process.env.VITE_COGNITO_CLIENT_ID,
-};
-const userPool = new CognitoUserPool(poolData);
+#### [NEW] [monthly_ranking.py](file:///d:/ai/aws_project/backend_lambda/monthly_ranking.py)
+-   `ranking.py`를 기반으로 작성하되, 월간 랭킹 전용으로 수정.
+-   **Key 전략**: `rank:monthly:YYYY-MM` 사용.
+-   **기능**:
+    -   `update_score`: 해당 월의 Redis Key에 점수 저장 (TTL 60일).
+    -   `get_ranking`: 해당 월의 랭킹 조회.
+    -   `get_my_rank`: 해당 월의 내 랭킹 조회.
 
-export const cognitoLogin = (username, password) => {
-  return new Promise((resolve, reject) => {
-    const user = new CognitoUser({ Username: username, Pool: userPool });
-    const authDetails = new AuthenticationDetails({ Username: username, Password: password });
-    user.authenticateUser(authDetails, {
-      onSuccess: (result) => resolve(result.getAccessToken().getJwtToken()),
-      onFailure: (err) => reject(err),
-    });
-  });
-};
-```
+### 프론트엔드 (`web-portal`)
 
-#### [MODIFY] src/contexts/AuthContext.jsx (login 함수)
-```javascript
-import { cognitoLogin } from '../services/cognito';
+#### [MODIFY] [env](file:///d:/ai/aws_project/web-portal/.env)
+-   `VITE_API_MONTHLY_RANKING_URL` 변수 추가 필요 (배포 후 설정).
 
-const login = async (username, password) => {
-  setIsLoading(true);
-  try {
-    const token = await cognitoLogin(username, password);
-    localStorage.setItem('auth_token', token);
-    const userData = await api.getUserProfile();
-    setUser(userData);
-  } catch (e) {
-    console.error('Cognito login error:', e);
-    // UI에 에러 표시 로직 추가 가능
-  }
-  setIsLoading(false);
-};
-```
+#### [MODIFY] [api.js](file:///d:/ai/aws_project/web-portal/src/services/api.js)
+-   `getMonthlyRanking(year, month)` 추가.
+-   `updateMonthlyScore(userId, score)` 추가 (게임 종료 시 호출 필요).
+-   `VITE_API_MONTHLY_RANKING_URL` 환경변수 사용.
 
-### Backend (Lambda)
-#### [MODIFY] backend_lambda/web_mypage.py
-- `COGNITO_REGION`, `COGNITO_USER_POOL_ID`를 환경 변수에서 읽음 (이미 적용).
-- `verify_token` 함수에서 실제 서명 검증을 수행하도록 `jwt.decode(..., key=public_key, algorithms=['RS256'])` 로 교체.
-- JWK를 캐시하고, `kid` 매칭 로직 추가.
+#### [MODIFY] [Ranking.jsx](file:///d:/ai/aws_project/web-portal/src/pages/Ranking.jsx)
+-   월간 탭 추가.
+-   **월 선택 정책 변경**: "월간 랭킹"은 **지난달(Last Month)** 데이터를 기본으로 보여줍니다. (예: 현재 1월이면 12월 랭킹 표시)
+-   UI 상단에 "202X년 X월 랭킹" 타이틀 표시.
 
-#### [NEW] helper function (inside lambda)
-```python
-import json, base64
-from jwt import PyJWKClient
+## 검증 계획
 
-def get_public_key(kid):
-    jwks = get_cognito_keys()
-    for key in jwks:
-        if key['kid'] == kid:
-            return jwt.algorithms.RSAAlgorithm.from_jwk(json.dumps(key))
-    return None
-```
-- `verify_token` 구현 예시:
-```python
-header = jwt.get_unverified_header(token)
-public_key = get_public_key(header['kid'])
-payload = jwt.decode(token, public_key, algorithms=['RS256'], audience=COGNITO_CLIENT_ID)
-return payload['sub']
-```
+### 자동화 테스트
+-   Lint 검사.
 
-### Deployment & Configuration
-1. **Cognito**
-   - User Pool 생성 → 도메인 설정 (예: `kg-auth.auth.ap-northeast-2.amazoncognito.com`).
-   - App Client 생성 (비밀키 없이, Authorization code grant 비활성화).
-   - 필요한 속성(이메일 등) 활성화.
-2. **환경 변수**
-   - Lambda: `COGNITO_USER_POOL_ID`, `COGNITO_REGION`, `COGNITO_CLIENT_ID`.
-   - 프론트엔드 `.env` (Vite): `VITE_COGNITO_USER_POOL_ID`, `VITE_COGNITO_CLIENT_ID`, `VITE_COGNITO_REGION`.
-3. **프론트엔드 빌드**
-   - `npm install amazon-cognito-identity-js jwt-decode`.
-   - `npm run build` 후 배포.
-4. **테스트**
-   - 사용자 생성 → 로그인 → `localStorage`에 JWT 저장 확인.
-   - MyPage 호출 → 200 응답 및 올바른 `highScore`, `rank` 등 확인.
-
-## Verification Plan
-- **자동 테스트**: `jest`로 `cognitoLogin` 성공/실패 케이스 모킹.
-- **수동 테스트**: 브라우저 콘솔에서 `localStorage.getItem('auth_token')` 확인, API 호출 시 401/200 응답 확인.
-- **보안 검증**: Lambda에서 `jwt.decode`에 `verify_signature=True`와 `audience` 검증이 정상 동작하는지 확인.
----
+### 수동 검증
+1.  **배포**: `monthly_ranking.py`를 AWS Lambda에 배포하고 API URL 확보.
+2.  **데이터 쌓기**: 테스트 스크립트로 `monthly_ranking.py`에 점수 전송.
+3.  **조회 확인**: 웹 포털에서 월간 탭 클릭 시 데이터 표시 확인.
