@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Space Shooter - Balanced Mode</title>
+    <title>Space Shooter - Event</title>
     <style>
         body {
             margin: 0;
@@ -40,13 +40,16 @@
 
     <div id="scoreBoard" class="ui-text">PRESS SPACE TO START</div>
     <canvas id="gameCanvas" width="400" height="400"></canvas>
-    <div id="descBoard" class="desc-text">난이도 완화됨 | 50점마다 속도 증가</div>
+    <div id="descBoard" class="desc-text">265점 달성 시 선물 지급! 🎁 (중복 불가)</div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const scoreEl = document.getElementById('scoreBoard');
         const descEl = document.getElementById('descBoard');
+
+        // ★ 본인 람다 주소 (채팅창과 동일)
+        const API_URL = "https://hwuhh3d5d45nbsyu7beqld7twi0dfpsk.lambda-url.ap-northeast-2.on.aws/";
 
         let gameState = 'ready'; 
         let score = 0;
@@ -59,14 +62,51 @@
                 x: 185, y: 185, 
                 width: 30, height: 30, 
                 vx: 0, vy: 0,            
-                accel: 0.8,    // 플레이어 성능은 좋게 유지 (피하기 쉬움)
+                accel: 0.8,
                 friction: 0.85,         
                 maxSpeed: 4.5  
             },
             bullets: [],
             keys: {},
-            lastBulletSpawn: 0
+            lastBulletSpawn: 0,
+            rewardRequested: false // 중복 요청 방지 플래그
         };
+
+        // === [보상 요청 함수] ===
+        // 설명: 랭킹(High Score)은 건드리지 않고, 오직 '보상 지급'만 요청합니다.
+        async function requestReward(finalScore) {
+            const userId = localStorage.getItem('kguard_user_id') || 'guest';
+            
+            // 게스트는 제외
+            if (userId === 'guest') {
+                // (선택) 게스트에게 로그인 유도 메시지를 띄우려면 여기에 작성
+                return;
+            }
+
+            console.log(`🎁 보상 지급 요청 중... (ID: ${userId}, 점수: ${finalScore})`);
+            
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'claim_reward', // ★ 중요: 'save_score'가 아니라 'claim_reward'만 보냄
+                        user_id: userId,
+                        score: finalScore
+                    })
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    alert("🎉 축하합니다! 이벤트 보상(1000 Gold)이 지급되었습니다!");
+                } else if (data.result && data.result.includes("ALREADY")) {
+                    // 이미 받은 경우 (조용히 넘어가거나 알려줌)
+                    console.log("이미 보상을 수령한 유저입니다.");
+                }
+            } catch (e) {
+                console.error("통신 에러:", e);
+            }
+        }
 
         window.addEventListener('keydown', (e) => {
             if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
@@ -95,7 +135,8 @@
             game.lastBulletSpawn = 0;
             score = 0;
             gameState = 'playing';
-            descEl.innerText = '오래버티면 선물이 있을지도?🎁';
+            game.rewardRequested = false; // 재시작 시 플래그 초기화
+            descEl.innerText = '목표: 265점을 넘기세요!';
             gameLoop(0);
         }
 
@@ -139,49 +180,35 @@
         }
 
         function spawnBullets(timestamp) {
-            // [난이도 완화 1] 난이도 상승 속도 늦춤 (6000 -> 7000)
             const difficulty = Math.min(score / 7000, 1); 
-            
-            // [난이도 완화 2] 발사 간격 늘림 (360 -> 420) : 좀 더 띄엄띄엄 나옴
             const spawnInterval = 420 - (difficulty * 260); 
-            
-            // [난이도 유지 3] 한 번에 나오는 총알 수: 2개 유지 (재미 요소)
             const bulletsPerSpawn = 2 + Math.floor(difficulty * 3);
 
             if (timestamp - game.lastBulletSpawn > spawnInterval) {
                 const pCenterX = game.player.x + game.player.width / 2;
                 const pCenterY = game.player.y + game.player.height / 2;
-
                 const currentDisplayScore = Math.floor(score / 10);
-                
-                // [난이도 완화 4] 레벨업 주기: 50점 (천천히 빨라짐)
                 const speedLevel = Math.floor(currentDisplayScore / 50); 
                 const speedBonus = speedLevel * 0.35; 
 
                 for (let i = 0; i < bulletsPerSpawn; i++) {
                     const side = Math.floor(Math.random() * 4);
                     let startX, startY;
-                    
                     switch(side) {
                         case 0: startX = Math.random() * 400; startY = -10; break; 
                         case 1: startX = Math.random() * 400; startY = 410; break; 
                         case 2: startX = -10; startY = Math.random() * 400; break; 
                         case 3: startX = 410; startY = Math.random() * 400; break; 
                     }
-
                     const dx = pCenterX - startX;
                     const dy = pCenterY - startY;
                     const distance = Math.sqrt(dx * dx + dy * dy);
-                    
-                    // [난이도 완화 5] 총알 속도 감소: 1.8 -> 1.6
                     const baseSpeed = 1.6;
                     const randomVar = Math.random() * 1.6; 
-                    
                     const bulletSpeed = (baseSpeed + speedBonus) + randomVar; 
 
                     game.bullets.push({
-                        x: startX,
-                        y: startY,
+                        x: startX, y: startY,
                         vx: (dx / distance) * bulletSpeed,
                         vy: (dy / distance) * bulletSpeed,
                         color: '#ffff00'
@@ -193,19 +220,13 @@
 
         function updateGame(timestamp) {
             const p = game.player;
-            
             if (game.keys['ArrowLeft'])  p.vx -= p.accel;
             if (game.keys['ArrowRight']) p.vx += p.accel;
             if (game.keys['ArrowUp'])    p.vy -= p.accel;
             if (game.keys['ArrowDown'])  p.vy += p.accel;
+            p.vx *= p.friction; p.vy *= p.friction;
+            p.x += p.vx; p.y += p.vy;
 
-            p.vx *= p.friction;
-            p.vy *= p.friction;
-
-            p.x += p.vx;
-            p.y += p.vy;
-
-            // 속도 제한
             const speed = Math.sqrt(p.vx*p.vx + p.vy*p.vy);
             if (speed > p.maxSpeed) {
                 p.vx = (p.vx / speed) * p.maxSpeed;
@@ -222,7 +243,6 @@
             game.bullets = game.bullets.filter(bullet => {
                 bullet.x += bullet.vx;
                 bullet.y += bullet.vy;
-
                 const hitBoxMargin = 4; 
                 if (
                     bullet.x > p.x + hitBoxMargin &&
@@ -247,14 +267,12 @@
             if (gameState === 'playing') {
                 updateGame(timestamp);
                 drawPlayer();
-                
                 game.bullets.forEach(b => {
                     ctx.fillStyle = b.color;
                     ctx.beginPath();
                     ctx.arc(b.x, b.y, BULLET_RADIUS, 0, Math.PI * 2);
                     ctx.fill();
                 });
-                
                 animationId = requestAnimationFrame(gameLoop);
             
             } else if (gameState === 'ready') {
@@ -290,6 +308,12 @@
                     ctx.fillStyle = '#facc15'; 
                     ctx.font = 'bold 20px monospace';
                     ctx.fillText('🎉 상품 획득 성공! 🎉', 200, 260);
+
+                    // [핵심] 265점 달성 시 보상 요청 (랭킹 저장은 안 함)
+                    if (!game.rewardRequested) {
+                        requestReward(finalScore);
+                        game.rewardRequested = true; 
+                    }
                 } else {
                     ctx.fillStyle = '#9ca3af';
                     ctx.font = '14px monospace';
