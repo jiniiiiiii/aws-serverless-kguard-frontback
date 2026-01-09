@@ -127,9 +127,9 @@ const Navbar = () => {
                                 icon={<User size={24} color="var(--color-accent-blue)" />}
                             />
 
-                            {/* Menu Item 2: EVENT GAME */}
+                            {/* Menu Item 2: EVENT GAME (주소 수정됨!) */}
                             <MegaMenuItem
-                                to={user ? "/game/event" : "/login"}
+                                to={user ? "/game/event/index.html" : "/login"}
                                 title="EVENT GAME"
                                 desc="Temporary mini-games"
                                 icon={<Gamepad2 size={24} color="var(--color-accent-purple)" />}
@@ -185,51 +185,83 @@ const NavLink = ({ to, label, icon, active }) => (
     </Link>
 );
 
-const MegaMenuItem = ({ to, title, desc, icon }) => (
-    <Link
-        to={to}
-        className="mega-menu-item"
-        style={{
-            textDecoration: 'none',
-            display: 'flex',
-            flexDirection: 'row', // Horizontal
-            alignItems: 'center',
-            gap: '1rem',
-            padding: '0.8rem 1.2rem',
-            borderRadius: 'var(--radius-md)',
-            transition: 'background 0.2s',
-            width: '260px', // Detailed width
-            textAlign: 'left' // Left align
-        }}
-        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--glass-bg)'}
-        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-    >
-        <div style={{
-            background: 'var(--glass-border)',
-            padding: '0.8rem',
-            borderRadius: '50%',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexShrink: 0
-        }}>
-            {icon}
-        </div>
-        <div>
+// [수정됨] .html 파일이면 <a> 태그를 쓰고, 아니면 <Link>를 쓰도록 개조
+const MegaMenuItem = ({ to, title, desc, icon }) => {
+    const isFile = to.includes('.html'); // 파일 링크인지 확인
+
+    const content = (
+        <>
             <div style={{
-                color: 'var(--color-text-primary)',
-                fontWeight: 'bold',
-                marginBottom: '0.2rem',
-                fontSize: '1rem' // Standard size
+                background: 'var(--glass-border)',
+                padding: '0.8rem',
+                borderRadius: '50%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0
             }}>
-                {title}
+                {icon}
             </div>
-            <div style={{
-                color: 'var(--color-text-secondary)',
-                fontSize: '0.8rem' // Smaller desc
-            }}>
-                {desc}
+            <div>
+                <div style={{
+                    color: 'var(--color-text-primary)',
+                    fontWeight: 'bold',
+                    marginBottom: '0.2rem',
+                    fontSize: '1rem' // Standard size
+                }}>
+                    {title}
+                </div>
+                <div style={{
+                    color: 'var(--color-text-secondary)',
+                    fontSize: '0.8rem' // Smaller desc
+                }}>
+                    {desc}
+                </div>
             </div>
-        </div>
-    </Link>
-);
+        </>
+    );
+
+    const style = {
+        textDecoration: 'none',
+        display: 'flex',
+        flexDirection: 'row', // Horizontal
+        alignItems: 'center',
+        gap: '1rem',
+        padding: '0.8rem 1.2rem',
+        borderRadius: 'var(--radius-md)',
+        transition: 'background 0.2s',
+        width: '260px', // Detailed width
+        textAlign: 'left' // Left align
+    };
+
+    const handleMouseEnter = (e) => e.currentTarget.style.background = 'var(--glass-bg)';
+    const handleMouseLeave = (e) => e.currentTarget.style.background = 'transparent';
+
+    // 파일(.html)이면 일반 <a> 태그 사용
+    if (isFile) {
+        return (
+            <a
+                href={to}
+                className="mega-menu-item"
+                style={style}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+            >
+                {content}
+            </a>
+        );
+    }
+
+    // 아니면 기존 <Link> 사용
+    return (
+        <Link
+            to={to}
+            className="mega-menu-item"
+            style={style}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+        >
+            {content}
+        </Link>
+    );
+};
 
 export default Navbar;
