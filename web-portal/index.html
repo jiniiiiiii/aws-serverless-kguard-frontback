@@ -12,7 +12,7 @@
   <div id="root"></div>
   <script type="module" src="/src/main.jsx"></script>
 
-  <div id="chat-widget" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; font-family: 'Courier New', monospace;">
+  <div id="chat-widget" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;">
       <button onclick="toggleChat()" style="
         position: relative;
         width: 70px;
@@ -75,7 +75,7 @@
           const msg = input.value;
           if (!msg.trim()) return;
 
-          // ▼▼▼ [수정] 사용자 말풍선 (초록 배경 + 흰색 글씨) ▼▼▼
+          // 사용자 말풍선
           logs.innerHTML += `
             <div class="msg-row user">
                 <div class="msg-bubble user-bubble">
@@ -88,7 +88,7 @@
 
           const loadingId = "loading-" + Date.now();
           
-          // 로딩 말풍선 (AI 스타일)
+          // 로딩 말풍선
           logs.innerHTML += `
             <div id="${loadingId}" class="msg-row bot">
                 <div class="msg-bubble bot-bubble" style="animation: blink 1.5s infinite; color: #aaa;">
@@ -108,15 +108,12 @@
               finalUserId = "guest-survivor";
           }
 
-          console.log("Security Check:", { Mode: finalUserId === storedUser ? "Member" : "Guest" });
-
           if (finalUserId === "guest-survivor") {
               const forbiddenWords = ['내 랭킹', '내 순위', '내 점수', '제 점수', '몇등', '몇 등', '내 등수', '내 기록'];
               
               if (forbiddenWords.some(word => msg.includes(word))) {
                   setTimeout(() => {
                       document.getElementById(loadingId).remove();
-                      
                       logs.innerHTML += `
                         <div class="msg-row bot">
                             <div class="msg-bubble warning-bubble">
@@ -146,7 +143,7 @@
               
               const formattedReply = data.reply.replace(/\n/g, '<br>');
               
-              // ▼▼▼ [수정] AI 답변 말풍선 (파란 배경 + 흰색 글씨) ▼▼▼
+              // AI 답변 말풍선
               logs.innerHTML += `
                 <div class="msg-row bot">
                     <div class="msg-bubble bot-bubble">
@@ -162,9 +159,26 @@
           logs.scrollTop = logs.scrollHeight;
       }
 
+      // ▼▼▼ CSS 스타일 (폰트 설정 포함) ▼▼▼
       const style = document.createElement('style');
       style.innerHTML = `
-          /* 메시지 행 (좌/우 배치용) */
+          /* 1. 폰트 등록 (넷마블체) */
+          @font-face {
+              font-family: 'Netmarble';
+              src: url('/fonts/netmarble_Bold.ttf') format('truetype');
+              font-weight: normal;
+              font-style: normal;
+          }
+
+          /* 2. 챗봇 위젯 안쪽 요소들에만 폰트 적용 */
+          #chat-widget, 
+          #chat-widget button, 
+          #chat-widget input, 
+          #chat-widget .msg-bubble {
+              font-family: 'Netmarble', sans-serif !important;
+          }
+
+          /* 메시지 행 스타일 */
           .msg-row {
               display: flex;
               width: 100%;
@@ -178,10 +192,9 @@
               to { opacity: 1; transform: translateY(0); }
           }
 
-          .msg-row.user { justify-content: flex-end; } /* 사용자는 오른쪽 */
-          .msg-row.bot { justify-content: flex-start; }  /* 봇은 왼쪽 */
+          .msg-row.user { justify-content: flex-end; }
+          .msg-row.bot { justify-content: flex-start; }
 
-          /* 말풍선 공통 스타일 */
           .msg-bubble {
               max-width: 80%;
               padding: 10px 14px;
@@ -193,23 +206,22 @@
               box-shadow: 0 2px 5px rgba(0,0,0,0.5);
           }
 
-          /* ▼▼▼ [수정] 사용자: 초록 배경 + 흰색 글씨 ▼▼▼ */
+          /* 사용자: 초록 배경 + 흰색 글씨 */
           .user-bubble {
-              background: #006600; /* 진한 초록 */
-              color: #ffffff;      /* 흰색 텍스트 */
-              border: 1px solid #00ff00; /* 형광 초록 테두리 */
+              background: #006600;
+              color: #ffffff;
+              border: 1px solid #00ff00;
               border-bottom-right-radius: 2px;
           }
 
-          /* ▼▼▼ [수정] AI: 파란 배경 + 흰색 글씨 ▼▼▼ */
+          /* AI: 파란 배경 + 흰색 글씨 */
           .bot-bubble {
-              background: #003366; /* 진한 파랑 */
-              color: #ffffff;      /* 흰색 텍스트 (기존 형광색에서 변경됨) */
-              border: 1px solid #00ccff; /* 형광 파랑 테두리 */
+              background: #003366;
+              color: #ffffff;
+              border: 1px solid #00ccff;
               border-bottom-left-radius: 2px;
           }
 
-          /* 경고 말풍선 (빨간색) */
           .warning-bubble {
               background: #660000;
               color: #ffffff;
