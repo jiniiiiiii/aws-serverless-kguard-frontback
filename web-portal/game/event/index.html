@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Space Shooter - Balance Patch</title>
+    <title>Space Shooter - Balanced Mode</title>
     <style>
         body {
             margin: 0;
@@ -40,7 +40,7 @@
 
     <div id="scoreBoard" class="ui-text">PRESS SPACE TO START</div>
     <canvas id="gameCanvas" width="400" height="400"></canvas>
-    <div id="descBoard" class="desc-text">중앙 시작 | 50점마다 속도 증가</div>
+    <div id="descBoard" class="desc-text">난이도 완화됨 | 50점마다 속도 증가</div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -55,7 +55,14 @@
         const BULLET_RADIUS = 2.5;
 
         const game = {
-            player: { x: 185, y: 185, width: 30, height: 30, speed: 4 },
+            player: { 
+                x: 185, y: 185, 
+                width: 30, height: 30, 
+                vx: 0, vy: 0,            
+                accel: 0.8,    // 플레이어 성능은 좋게 유지 (피하기 쉬움)
+                friction: 0.85,         
+                maxSpeed: 4.5  
+            },
             bullets: [],
             keys: {},
             lastBulletSpawn: 0
@@ -76,37 +83,40 @@
         });
 
         function startGame() {
-            game.player = { x: 185, y: 185, width: 30, height: 30, speed: 4 };
+            game.player = { 
+                x: 185, y: 185, 
+                width: 30, height: 30, 
+                vx: 0, vy: 0,
+                accel: 0.8,
+                friction: 0.85,
+                maxSpeed: 4.5
+            };
             game.bullets = [];
             game.lastBulletSpawn = 0;
             score = 0;
             gameState = 'playing';
-            descEl.innerText = '50점마다 점점 빨라집니다!';
+            descEl.innerText = '오래버티면 선물이 있을지도?🎁';
             gameLoop(0);
         }
 
-        // 몬스터 그리기 (이전과 동일)
         function drawPlayer() {
             const p = game.player;
             const x = p.x;
             const y = p.y;
             const s = 2; 
 
-            // 뿔/지느러미
+            // 몬스터 그리기
             ctx.fillStyle = '#ef4444'; 
             ctx.fillRect(x + 6*s, y, 4*s, 2*s);
             ctx.fillRect(x + 11*s, y + 2*s, 2*s, 4*s);
 
-            // 몸통
             ctx.fillStyle = '#a3e635'; 
             ctx.fillRect(x + 2*s, y + 2*s, 10*s, 11*s); 
 
-            // 노란 뿔
             ctx.fillStyle = '#facc15'; 
             ctx.fillRect(x, y + 2*s, 2*s, 3*s); 
             ctx.fillRect(x + 10*s, y + 2*s, 2*s, 3*s); 
 
-            // 눈
             ctx.fillStyle = '#dc2626'; 
             ctx.fillRect(x + 3*s, y + 5*s, 3*s, 2*s); 
             ctx.fillRect(x + 8*s, y + 5*s, 3*s, 2*s); 
@@ -115,7 +125,6 @@
             ctx.fillRect(x + 5*s, y + 5*s, 1*s, 1*s);
             ctx.fillRect(x + 10*s, y + 5*s, 1*s, 1*s);
 
-            // 입
             ctx.fillStyle = '#7f1d1d'; 
             ctx.fillRect(x + 3*s, y + 9*s, 8*s, 3*s);
             
@@ -124,17 +133,20 @@
             ctx.fillRect(x + 9*s, y + 9*s, 1*s, 1*s); 
             ctx.fillRect(x + 6*s, y + 11*s, 2*s, 1*s); 
 
-            // 다리
-            ctx.fillStyle = '#4d7c0f';
+            ctx.fillStyle = '#4d7c0f'; 
             ctx.fillRect(x + 3*s, y + 13*s, 2*s, 2*s);
             ctx.fillRect(x + 9*s, y + 13*s, 2*s, 2*s);
         }
 
         function spawnBullets(timestamp) {
-            // 난이도(탄막 생성 주기)는 그대로 유지
-            const difficulty = Math.min(score / 5000, 1); 
-            const spawnInterval = 300 - (difficulty * 220); 
-            const bulletsPerSpawn = 1 + Math.floor(difficulty * 3);
+            // [난이도 완화 1] 난이도 상승 속도 늦춤 (6000 -> 7000)
+            const difficulty = Math.min(score / 7000, 1); 
+            
+            // [난이도 완화 2] 발사 간격 늘림 (360 -> 420) : 좀 더 띄엄띄엄 나옴
+            const spawnInterval = 420 - (difficulty * 260); 
+            
+            // [난이도 유지 3] 한 번에 나오는 총알 수: 2개 유지 (재미 요소)
+            const bulletsPerSpawn = 2 + Math.floor(difficulty * 3);
 
             if (timestamp - game.lastBulletSpawn > spawnInterval) {
                 const pCenterX = game.player.x + game.player.width / 2;
@@ -142,11 +154,9 @@
 
                 const currentDisplayScore = Math.floor(score / 10);
                 
-                // [수정 1] 50점 단위로 레벨 증가
+                // [난이도 완화 4] 레벨업 주기: 50점 (천천히 빨라짐)
                 const speedLevel = Math.floor(currentDisplayScore / 50); 
-                
-                // [밸런스 조절] 주기가 빨라졌으므로 증가폭은 0.5 -> 0.4로 미세 조정
-                const speedBonus = speedLevel * 0.4; 
+                const speedBonus = speedLevel * 0.35; 
 
                 for (let i = 0; i < bulletsPerSpawn; i++) {
                     const side = Math.floor(Math.random() * 4);
@@ -163,9 +173,9 @@
                     const dy = pCenterY - startY;
                     const distance = Math.sqrt(dx * dx + dy * dy);
                     
-                    // [수정 2] 기본 속도 하향: 3.5 -> 2.0 (초반에 훨씬 피하기 쉬움)
-                    const baseSpeed = 2.0;
-                    const randomVar = Math.random() * 2.0; // 랜덤 변수도 약간 줄임
+                    // [난이도 완화 5] 총알 속도 감소: 1.8 -> 1.6
+                    const baseSpeed = 1.6;
+                    const randomVar = Math.random() * 1.6; 
                     
                     const bulletSpeed = (baseSpeed + speedBonus) + randomVar; 
 
@@ -184,10 +194,28 @@
         function updateGame(timestamp) {
             const p = game.player;
             
-            if (game.keys['ArrowLeft']) p.x = Math.max(0, p.x - p.speed);
-            if (game.keys['ArrowRight']) p.x = Math.min(400 - p.width, p.x + p.speed);
-            if (game.keys['ArrowUp']) p.y = Math.max(0, p.y - p.speed);
-            if (game.keys['ArrowDown']) p.y = Math.min(400 - p.height, p.y + p.speed);
+            if (game.keys['ArrowLeft'])  p.vx -= p.accel;
+            if (game.keys['ArrowRight']) p.vx += p.accel;
+            if (game.keys['ArrowUp'])    p.vy -= p.accel;
+            if (game.keys['ArrowDown'])  p.vy += p.accel;
+
+            p.vx *= p.friction;
+            p.vy *= p.friction;
+
+            p.x += p.vx;
+            p.y += p.vy;
+
+            // 속도 제한
+            const speed = Math.sqrt(p.vx*p.vx + p.vy*p.vy);
+            if (speed > p.maxSpeed) {
+                p.vx = (p.vx / speed) * p.maxSpeed;
+                p.vy = (p.vy / speed) * p.maxSpeed;
+            }
+
+            if (p.x < 0) { p.x = 0; p.vx = 0; }
+            if (p.x > 400 - p.width) { p.x = 400 - p.width; p.vx = 0; }
+            if (p.y < 0) { p.y = 0; p.vy = 0; }
+            if (p.y > 400 - p.height) { p.y = 400 - p.height; p.vy = 0; }
 
             spawnBullets(timestamp);
 
@@ -231,10 +259,10 @@
             
             } else if (gameState === 'ready') {
                 drawPlayer();
-                ctx.fillStyle = '#fff';
+                ctx.fillStyle = '#84cc16';
                 ctx.font = '20px monospace';
                 ctx.textAlign = 'center';
-                ctx.fillText('MONSTER DODGE', 200, 150);
+                ctx.fillText('⭐K-GUARD EVENT GAME⭐', 200, 150);
                 
             } else if (gameState === 'gameOver') {
                 drawPlayer();
@@ -253,9 +281,20 @@
                 ctx.textAlign = 'center';
                 ctx.fillText('GAME OVER', 200, 180);
                 
+                const finalScore = Math.floor(score / 10);
                 ctx.fillStyle = '#fff';
                 ctx.font = '16px monospace';
-                ctx.fillText(`최종 점수: ${Math.floor(score / 10)}`, 200, 220);
+                ctx.fillText(`최종 점수: ${finalScore}`, 200, 220);
+
+                if (finalScore >= 265) {
+                    ctx.fillStyle = '#facc15'; 
+                    ctx.font = 'bold 20px monospace';
+                    ctx.fillText('🎉 상품 획득 성공! 🎉', 200, 260);
+                } else {
+                    ctx.fillStyle = '#9ca3af';
+                    ctx.font = '14px monospace';
+                    ctx.fillText(`🎁상품까지 ${265 - finalScore}점 남았습니다!`, 200, 260);
+                }
                 
                 descEl.innerText = '스페이스바를 눌러 재시작';
             }
