@@ -6,6 +6,7 @@ import Home from './pages/Home';
 import MyPage from './pages/MyPage';
 import Login from './pages/Login';
 import Ranking from './pages/Ranking';
+import Attendance from './pages/Attendance';
 import Footer from './components/Footer';
 import './styles/index.css';
 
@@ -43,12 +44,20 @@ const AppContent = () => {
               </RequireAuth>
             }
           />
+          <Route
+            path="/attendance"
+            element={
+              <RequireAuth>
+                <Attendance />
+              </RequireAuth>
+            }
+          />
           {/* Catch-all for 404s - Redirect to Home */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
       <Footer />
-    </div>
+    </div >
   );
 };
 

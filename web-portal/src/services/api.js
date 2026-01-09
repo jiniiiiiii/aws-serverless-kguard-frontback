@@ -253,5 +253,31 @@ export const api = {
             console.error("Monthly Ranking API Error:", error);
             return { top3: [], others: [], month: targetMonth };
         }
+    },
+
+    // [New] Attendance Check
+    checkAttendance: async (userId) => {
+        try {
+            // ALB URL (Hardcoded fallback for easier testing)
+            const targetUrl = import.meta.env.VITE_API_ATTENDANCE_URL || 'http://kg-dev-lb-esc-ap-ne-2-604922001.ap-northeast-2.elb.amazonaws.com/attendance';
+
+            const response = await fetch(targetUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: userId })
+            });
+
+            const result = await response.json();
+            if (!response.ok) {
+                // If already attended (409 or 400), return the message
+                if (result.message) throw new Error(result.message);
+                throw new Error('Attendance check failed');
+            }
+            return result; // { status: 'success', data: { gold: ... } }
+
+        } catch (error) {
+            console.error("Attendance API Error:", error);
+            throw error;
+        }
     }
 };
