@@ -58,7 +58,8 @@
           logs.scrollTop = logs.scrollHeight;
 
           const loadingId = "loading-" + Date.now();
-          // [베이스 코드 유지] 사용자가 원했던 멘트 적용
+          
+          // [유지] 요청하신 로딩 멘트
           logs.innerHTML += `
             <div id="${loadingId}" style="margin: 8px 0; display: flex; align-items: center;">
                 <div style="border: 1px solid #00ff00; border-radius: 20px; padding: 6px 15px; color: #00ff00; font-size: 13px; animation: blink 1s infinite; background: rgba(0, 255, 0, 0.1);">
@@ -68,72 +69,42 @@
             </div>`;
           logs.scrollTop = logs.scrollHeight;
 
-          // ▼▼▼ [기능 합체] 보안 토큰 검사 기능 추가 ▼▼▼
+          // ▼▼▼ [통합된 로직 시작] ▼▼▼
           
-          // 1. 이름표 확인
-          const targetUser = localStorage.getItem('kguard_user_id');
-          // 2. ★ 진짜 출입증(토큰) 확인 (합쳐진 기능)
+          // 1. 정보 조회
+          const storedUser = localStorage.getItem('kguard_user_id');
           const realToken = localStorage.getItem('auth_token');
-          
           const sessionKey = localStorage.getItem('kguard_session_key') || "guest-" + Date.now();
 
-          console.log("Security Check:", { User: targetUser, Token: !!realToken });
+          // 2. 신원 판별 (정예 요원 vs 떠돌이 생존자)
+          let finalUserId;
+          if (storedUser && realToken) {
+              finalUserId = storedUser; // 로그인 상태
+          } else {
+              finalUserId = "guest-survivor"; // 비로그인(게스트) 상태
+          }
 
-          // ★ 아이디가 없거나 OR 출입증(토큰)이 없으면 무조건 거부
-          if (!targetUser || !realToken) {
-              setTimeout(() => {
-                  document.getElementById(loadingId).remove();
-                  // 찌꺼기 데이터 삭제
-                  localStorage.removeItem('kguard_user_id');
+          console.log("Security Check:", { Mode: finalUserId === storedUser ? "Member" : "Guest" });
 
-                  // [베이스 코드 유지] 사용자가 원했던 에러 메시지 디자인 적용
-                  logs.innerHTML += `
-                    <div style="color: #ff3333; margin: 10px 0; text-shadow: 0 0 5px rgba(255,0,0,0.5);">
-                        ⚠️ <strong>[경고] 관계자 외 출입금지         if (!msg.trim()) return;
-
-          logs.innerHTML += `<div style="text-align: right; margin: 8px 0; color: #aaa;">> ${msg}</div>`;
-          input.value = '';
-          logs.scrollTop = logs.scrollHeight;
-
-          const loadingId = "loading-" + Date.now();
-          // [베이스 코드 유지] 사용자가 원했던 멘트 적용
-          logs.innerHTML += `
-            <div id="${loadingId}" style="margin: 8px 0; display: flex; align-items: center;">
-                <div style="border: 1px solid #00ff00; border-radius: 20px; padding: 6px 15px; color: #00ff00; font-size: 13px; animation: blink 1s infinite; background: rgba(0, 255, 0, 0.1);">
-                    👀 열심히 랭킹 북 뒤적거리는중...<br>
-                    🔄 잠시만 기다려주세요...
-                </div>
-            </div>`;
-          logs.scrollTop = logs.scrollHeight;
-
-          // ▼▼▼ [기능 합체] 보안 토큰 검사 기능 추가 ▼▼▼
-          
-          // 1. 이름표 확인
-          const targetUser = localStorage.getItem('kguard_user_id');
-          // 2. ★ 진짜 출입증(토큰) 확인 (합쳐진 기능)
-          const realToken = localStorage.getItem('auth_token');
-          
-          const sessionKey = localStorage.getItem('kguard_session_key') || "guest-" + Date.now();
-
-          console.log("Security Check:", { User: targetUser, Token: !!realToken });
-
-          // ★ 아이디가 없거나 OR 출입증(토큰)이 없으면 무조건 거부
-          if (!targetUser || !realToken) {
-              setTimeout(() => {
-                  document.getElementById(loadingId).remove();
-                  // 찌꺼기 데이터 삭제
-                  localStorage.removeItem('kguard_user_id');
-
-                  // [베이스 코드 유지] 사용자가 원했던 에러 메시지 디자인 적용
-                  logs.innerHTML += `
-                    <div style="color: #ff3333; margin: 10px 0; text-shadow: 0 0 5px rgba(255,0,0,0.5);">
-                        ⚠️ <strong>[위험] 관계자 외 출입금지</strong><br>
-                        ✅ 로그인 상태를 확인해주세요.<br>
-                        ⚡️ 어서 접속해서 성소를 지키러 와주세요.
-                    </div>`;
-                  logs.scrollTop = logs.scrollHeight;
-              }, 600);
-              return;
+          // 3. [게스트 필터] 비로그인 상태인데 '개인 정보'를 물어보면 차단
+          if (finalUserId === "guest-survivor") {
+              const forbiddenWords = ['내 랭킹', '내 순위', '내 점수', '제 점수', '몇등', '몇 등', '내 등수', '내 기록', '내 정보'];
+              
+              if (forbiddenWords.some(word => msg.includes(word))) {
+                  setTimeout(() => {
+                      document.getElementById(loadingId).remove();
+                      
+                      // [유지] 요청하신 에러 메시지 스타일 적용
+                      logs.innerHTML += `
+                        <div style="color: #ff3333; margin: 10px 0; text-shadow: 0 0 5px rgba(255,0,0,0.5);">
+                            ⚠️ <strong>[위험] 관계자 외 출입금지</strong><br>
+                            ✅ 로그인 상태를 확인해주세요.<br>
+                            ⚡️ 어서 접속해서 성소를 지키러 와주세요.
+                        </div>`;
+                      logs.scrollTop = logs.scrollHeight;
+                  }, 600);
+                  return; // ★ 서버 전송 차단
+              }
           }
           
           // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
@@ -144,7 +115,7 @@
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ 
                       message: msg, 
-                      user_id: targetUser,
+                      user_id: finalUserId, // 판별된 아이디 전송
                       session_id: sessionKey
                   })
               });
