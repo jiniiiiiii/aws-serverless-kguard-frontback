@@ -58,6 +58,7 @@
           logs.scrollTop = logs.scrollHeight;
 
           const loadingId = "loading-" + Date.now();
+          // [베이스 코드 유지] 사용자가 원했던 멘트 적용
           logs.innerHTML += `
             <div id="${loadingId}" style="margin: 8px 0; display: flex; align-items: center;">
                 <div style="border: 1px solid #00ff00; border-radius: 20px; padding: 6px 15px; color: #00ff00; font-size: 13px; animation: blink 1s infinite; background: rgba(0, 255, 0, 0.1);">
@@ -67,20 +68,25 @@
             </div>`;
           logs.scrollTop = logs.scrollHeight;
 
-          // ▼▼▼ [핵심 수정 부분] 변수 이름을 'targetUser'로 통일했습니다! ▼▼▼
+          // ▼▼▼ [기능 합체] 보안 토큰 검사 기능 추가 ▼▼▼
           
-          // 1. 아이디 가져오기
+          // 1. 이름표 확인
           const targetUser = localStorage.getItem('kguard_user_id');
-          // 2. 세션키 가져오기 (없으면 임시 생성)
+          // 2. ★ 진짜 출입증(토큰) 확인 (합쳐진 기능)
+          const realToken = localStorage.getItem('auth_token');
+          
           const sessionKey = localStorage.getItem('kguard_session_key') || "guest-" + Date.now();
 
-          // [디버깅용] 콘솔에 현재 상태를 출력합니다 (F12 콘솔에서 확인 가능)
-          console.log("Chat Debug:", { targetUser, sessionKey });
+          console.log("Security Check:", { User: targetUser, Token: !!realToken });
 
-          // 3. 아이디가 없으면 거절
-          if (!targetUser) {
+          // ★ 아이디가 없거나 OR 출입증(토큰)이 없으면 무조건 거부
+          if (!targetUser || !realToken) {
               setTimeout(() => {
                   document.getElementById(loadingId).remove();
+                  // 찌꺼기 데이터 삭제
+                  localStorage.removeItem('kguard_user_id');
+
+                  // [베이스 코드 유지] 사용자가 원했던 에러 메시지 디자인 적용
                   logs.innerHTML += `
                     <div style="color: #ff3333; margin: 10px 0; text-shadow: 0 0 5px rgba(255,0,0,0.5);">
                         ⚠️ <strong>[경고] 접근 거부</strong><br>
@@ -100,7 +106,7 @@
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ 
                       message: msg, 
-                      user_id: targetUser, // 통일된 변수명 사용
+                      user_id: targetUser,
                       session_id: sessionKey
                   })
               });
