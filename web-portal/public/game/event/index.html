@@ -4,6 +4,78 @@
     <meta charset="UTF-8">
     <title>Space Shooter - Event</title>
     <style>
+        /* === [1. 메뉴바 스타일 추가] === */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 64px;
+            background: rgba(15, 23, 42, 0.9); /* 짙은 남색 (유리 효과) */
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            box-sizing: border-box;
+            z-index: 1000;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .logo {
+            text-decoration: none;
+            color: white;
+            font-weight: bold;
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #94a3b8; /* 회색 텍스트 */
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: #0ea5e9; /* 파란색 강조 */
+        }
+
+        .nav-right {
+            font-size: 0.9rem;
+            color: #94a3b8;
+        }
+
+        .user-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #e2e8f0;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            background-color: #22c55e; /* 초록색 점 */
+            border-radius: 50%;
+        }
+
+        /* === [2. 기존 게임 스타일] === */
         body {
             margin: 0;
             padding: 0;
@@ -38,23 +110,54 @@
 </head>
 <body>
 
+    <nav class="navbar">
+        <div class="nav-left">
+            <a href="/" class="logo">
+                <span style="color: #0ea5e9;">🛡️</span> K-GUARD
+            </a>
+            <div class="nav-links">
+                <a href="/">NOTICE</a>
+                <a href="/ranking">RANKING</a>
+                <a href="/mypage" class="active">MY HOME</a>
+            </div>
+        </div>
+        <div class="nav-right" id="topUserArea">
+            <a href="/login" style="color: inherit; text-decoration: none;">Login</a>
+        </div>
+    </nav>
+
     <div id="scoreBoard" class="ui-text">PRESS SPACE TO START</div>
     <canvas id="gameCanvas" width="400" height="400"></canvas>
-    <div id="descBoard" class="desc-text">265점 달성 시 선물 지급! 🎁 (중복 불가)</div>
+    <div id="descBoard" class="desc-text">100점 달성 시 선물 지급! 🎁 (중복 불가)</div>
 
     <script>
+        // === [메뉴바 유저 정보 표시 로직] ===
+        (function() {
+            const userId = localStorage.getItem('kguard_user_id');
+            if (userId) {
+                const name = userId.split('@')[0];
+                const userArea = document.getElementById('topUserArea');
+                userArea.innerHTML = `
+                    <div class="user-badge">
+                        <div class="dot"></div>
+                        <span>${name}</span>
+                    </div>
+                `;
+            }
+        })();
+
+        // === [게임 로직 시작] ===
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const scoreEl = document.getElementById('scoreBoard');
         const descEl = document.getElementById('descBoard');
 
-        // ★ 본인 람다 주소 (채팅창과 동일)
+        // ★ 본인 람다 주소
         const API_URL = "https://hwuhh3d5d45nbsyu7beqld7twi0dfpsk.lambda-url.ap-northeast-2.on.aws/";
 
         let gameState = 'ready'; 
         let score = 0;
         let animationId = null;
-
         const BULLET_RADIUS = 2.5;
 
         const game = {
@@ -69,19 +172,13 @@
             bullets: [],
             keys: {},
             lastBulletSpawn: 0,
-            rewardRequested: false // 중복 요청 방지 플래그
+            rewardRequested: false
         };
 
-        // === [보상 요청 함수] ===
-        // 설명: 랭킹(High Score)은 건드리지 않고, 오직 '보상 지급'만 요청합니다.
+        // 보상 요청 함수
         async function requestReward(finalScore) {
             const userId = localStorage.getItem('kguard_user_id') || 'guest';
-            
-            // 게스트는 제외
-            if (userId === 'guest') {
-                // (선택) 게스트에게 로그인 유도 메시지를 띄우려면 여기에 작성
-                return;
-            }
+            if (userId === 'guest') return;
 
             console.log(`🎁 보상 지급 요청 중... (ID: ${userId}, 점수: ${finalScore})`);
             
@@ -90,7 +187,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        action: 'claim_reward', // ★ 중요: 'save_score'가 아니라 'claim_reward'만 보냄
+                        action: 'claim_reward',
                         user_id: userId,
                         score: finalScore
                     })
@@ -100,8 +197,9 @@
                 if (data.success) {
                     alert("🎉 축하합니다! 이벤트 보상(1000 Gold)이 지급되었습니다!");
                 } else if (data.result && data.result.includes("ALREADY")) {
-                    // 이미 받은 경우 (조용히 넘어가거나 알려줌)
                     console.log("이미 보상을 수령한 유저입니다.");
+                } else if (data.result && data.result.includes("Score")) {
+                    alert("⚠️ 서버 기준 점수에 미달되었습니다. 람다 코드를 확인해주세요.");
                 }
             } catch (e) {
                 console.error("통신 에러:", e);
@@ -135,16 +233,14 @@
             game.lastBulletSpawn = 0;
             score = 0;
             gameState = 'playing';
-            game.rewardRequested = false; // 재시작 시 플래그 초기화
-            descEl.innerText = '목표: 265점을 넘기세요!';
+            game.rewardRequested = false; 
+            descEl.innerText = '목표: 100점을 넘기세요!';
             gameLoop(0);
         }
 
         function drawPlayer() {
             const p = game.player;
-            const x = p.x;
-            const y = p.y;
-            const s = 2; 
+            const x = p.x; const y = p.y; const s = 2; 
 
             // 몬스터 그리기
             ctx.fillStyle = '#ef4444'; 
@@ -304,12 +400,11 @@
                 ctx.font = '16px monospace';
                 ctx.fillText(`최종 점수: ${finalScore}`, 200, 220);
 
-                if (finalScore >= 265) {
+                if (finalScore >= 100) {
                     ctx.fillStyle = '#facc15'; 
                     ctx.font = 'bold 20px monospace';
                     ctx.fillText('🎉 상품 획득 성공! 🎉', 200, 260);
 
-                    // [핵심] 265점 달성 시 보상 요청 (랭킹 저장은 안 함)
                     if (!game.rewardRequested) {
                         requestReward(finalScore);
                         game.rewardRequested = true; 
@@ -317,7 +412,7 @@
                 } else {
                     ctx.fillStyle = '#9ca3af';
                     ctx.font = '14px monospace';
-                    ctx.fillText(`🎁상품까지 ${265 - finalScore}점 남았습니다!`, 200, 260);
+                    ctx.fillText(`🎁상품까지 ${100 - finalScore}점 남았습니다!`, 200, 260);
                 }
                 
                 descEl.innerText = '스페이스바를 눌러 재시작';
