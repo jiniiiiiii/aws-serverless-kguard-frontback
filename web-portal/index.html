@@ -106,7 +106,7 @@
           console.log("Security Check:", { Mode: finalUserId === storedUser ? "Member" : "Guest" });
 
           if (finalUserId === "guest-survivor") {
-              const forbiddenWords = ['내 랭킹', '내 순위', '내 점수', '제 점수', '몇등', '몇 등', '내 등수', '내 기록', '내 정보'];
+              const forbiddenWords = ['내 랭킹', '내 순위', '내 점수', '제 점수', '몇등', '몇 등', '내 등수', '내 기록'];
               
               if (forbiddenWords.some(word => msg.includes(word))) {
                   setTimeout(() => {
