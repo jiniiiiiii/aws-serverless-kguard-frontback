@@ -89,7 +89,45 @@
                   // [베이스 코드 유지] 사용자가 원했던 에러 메시지 디자인 적용
                   logs.innerHTML += `
                     <div style="color: #ff3333; margin: 10px 0; text-shadow: 0 0 5px rgba(255,0,0,0.5);">
-                        ⚠️ <strong>[경고] 접근 거부</strong><br>
+                        ⚠️ <strong>[경고] 관계자 외 출입금지         if (!msg.trim()) return;
+
+          logs.innerHTML += `<div style="text-align: right; margin: 8px 0; color: #aaa;">> ${msg}</div>`;
+          input.value = '';
+          logs.scrollTop = logs.scrollHeight;
+
+          const loadingId = "loading-" + Date.now();
+          // [베이스 코드 유지] 사용자가 원했던 멘트 적용
+          logs.innerHTML += `
+            <div id="${loadingId}" style="margin: 8px 0; display: flex; align-items: center;">
+                <div style="border: 1px solid #00ff00; border-radius: 20px; padding: 6px 15px; color: #00ff00; font-size: 13px; animation: blink 1s infinite; background: rgba(0, 255, 0, 0.1);">
+                    👀 열심히 랭킹 북 뒤적거리는중...<br>
+                    🔄 잠시만 기다려주세요...
+                </div>
+            </div>`;
+          logs.scrollTop = logs.scrollHeight;
+
+          // ▼▼▼ [기능 합체] 보안 토큰 검사 기능 추가 ▼▼▼
+          
+          // 1. 이름표 확인
+          const targetUser = localStorage.getItem('kguard_user_id');
+          // 2. ★ 진짜 출입증(토큰) 확인 (합쳐진 기능)
+          const realToken = localStorage.getItem('auth_token');
+          
+          const sessionKey = localStorage.getItem('kguard_session_key') || "guest-" + Date.now();
+
+          console.log("Security Check:", { User: targetUser, Token: !!realToken });
+
+          // ★ 아이디가 없거나 OR 출입증(토큰)이 없으면 무조건 거부
+          if (!targetUser || !realToken) {
+              setTimeout(() => {
+                  document.getElementById(loadingId).remove();
+                  // 찌꺼기 데이터 삭제
+                  localStorage.removeItem('kguard_user_id');
+
+                  // [베이스 코드 유지] 사용자가 원했던 에러 메시지 디자인 적용
+                  logs.innerHTML += `
+                    <div style="color: #ff3333; margin: 10px 0; text-shadow: 0 0 5px rgba(255,0,0,0.5);">
+                        ⚠️ <strong>[위험] 관계자 외 출입금지</strong><br>
                         ✅ 로그인 상태를 확인해주세요.<br>
                         ⚡️ 어서 접속해서 성소를 지키러 와주세요.
                     </div>`;
