@@ -2,8 +2,80 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Space Shooter - Balanced Mode</title>
+    <title>Space Shooter - Event</title>
     <style>
+        /* === [1. 메뉴바 스타일 추가] === */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 64px;
+            background: rgba(15, 23, 42, 0.9); /* 짙은 남색 (유리 효과) */
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            box-sizing: border-box;
+            z-index: 1000;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .logo {
+            text-decoration: none;
+            color: white;
+            font-weight: bold;
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #94a3b8; /* 회색 텍스트 */
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: #0ea5e9; /* 파란색 강조 */
+        }
+
+        .nav-right {
+            font-size: 0.9rem;
+            color: #94a3b8;
+        }
+
+        .user-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #e2e8f0;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            background-color: #22c55e; /* 초록색 점 */
+            border-radius: 50%;
+        }
+
+        /* === [2. 기존 게임 스타일] === */
         body {
             margin: 0;
             padding: 0;
@@ -38,20 +110,54 @@
 </head>
 <body>
 
+    <nav class="navbar">
+        <div class="nav-left">
+            <a href="/" class="logo">
+                <span style="color: #0ea5e9;">🛡️</span> K-GUARD
+            </a>
+            <div class="nav-links">
+                <a href="/">NOTICE</a>
+                <a href="/ranking">RANKING</a>
+                <a href="/mypage" class="active">MY HOME</a>
+            </div>
+        </div>
+        <div class="nav-right" id="topUserArea">
+            <a href="/login" style="color: inherit; text-decoration: none;">Login</a>
+        </div>
+    </nav>
+
     <div id="scoreBoard" class="ui-text">PRESS SPACE TO START</div>
     <canvas id="gameCanvas" width="400" height="400"></canvas>
-    <div id="descBoard" class="desc-text">난이도 완화됨 | 50점마다 속도 증가</div>
+    <div id="descBoard" class="desc-text">100점 달성 시 선물 지급! 🎁 (중복 불가)</div>
 
     <script>
+        // === [메뉴바 유저 정보 표시 로직] ===
+        (function() {
+            const userId = localStorage.getItem('kguard_user_id');
+            if (userId) {
+                const name = userId.split('@')[0];
+                const userArea = document.getElementById('topUserArea');
+                userArea.innerHTML = `
+                    <div class="user-badge">
+                        <div class="dot"></div>
+                        <span>${name}</span>
+                    </div>
+                `;
+            }
+        })();
+
+        // === [게임 로직 시작] ===
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const scoreEl = document.getElementById('scoreBoard');
         const descEl = document.getElementById('descBoard');
 
+        // ★ 본인 람다 주소
+        const API_URL = "https://hwuhh3d5d45nbsyu7beqld7twi0dfpsk.lambda-url.ap-northeast-2.on.aws/";
+
         let gameState = 'ready'; 
         let score = 0;
         let animationId = null;
-
         const BULLET_RADIUS = 2.5;
 
         const game = {
@@ -59,14 +165,46 @@
                 x: 185, y: 185, 
                 width: 30, height: 30, 
                 vx: 0, vy: 0,            
-                accel: 0.8,    // 플레이어 성능은 좋게 유지 (피하기 쉬움)
+                accel: 0.8,
                 friction: 0.85,         
                 maxSpeed: 4.5  
             },
             bullets: [],
             keys: {},
-            lastBulletSpawn: 0
+            lastBulletSpawn: 0,
+            rewardRequested: false
         };
+
+        // 보상 요청 함수
+        async function requestReward(finalScore) {
+            const userId = localStorage.getItem('kguard_user_id') || 'guest';
+            if (userId === 'guest') return;
+
+            console.log(`🎁 보상 지급 요청 중... (ID: ${userId}, 점수: ${finalScore})`);
+            
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'claim_reward',
+                        user_id: userId,
+                        score: finalScore
+                    })
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    alert("🎉 축하합니다! 이벤트 보상(1000 Gold)이 지급되었습니다!");
+                } else if (data.result && data.result.includes("ALREADY")) {
+                    console.log("이미 보상을 수령한 유저입니다.");
+                } else if (data.result && data.result.includes("Score")) {
+                    alert("⚠️ 서버 기준 점수에 미달되었습니다. 람다 코드를 확인해주세요.");
+                }
+            } catch (e) {
+                console.error("통신 에러:", e);
+            }
+        }
 
         window.addEventListener('keydown', (e) => {
             if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
@@ -95,15 +233,14 @@
             game.lastBulletSpawn = 0;
             score = 0;
             gameState = 'playing';
-            descEl.innerText = '오래버티면 선물이 있을지도?🎁';
+            game.rewardRequested = false; 
+            descEl.innerText = '목표: 100점을 넘기세요!';
             gameLoop(0);
         }
 
         function drawPlayer() {
             const p = game.player;
-            const x = p.x;
-            const y = p.y;
-            const s = 2; 
+            const x = p.x; const y = p.y; const s = 2; 
 
             // 몬스터 그리기
             ctx.fillStyle = '#ef4444'; 
@@ -139,49 +276,35 @@
         }
 
         function spawnBullets(timestamp) {
-            // [난이도 완화 1] 난이도 상승 속도 늦춤 (6000 -> 7000)
             const difficulty = Math.min(score / 7000, 1); 
-            
-            // [난이도 완화 2] 발사 간격 늘림 (360 -> 420) : 좀 더 띄엄띄엄 나옴
             const spawnInterval = 420 - (difficulty * 260); 
-            
-            // [난이도 유지 3] 한 번에 나오는 총알 수: 2개 유지 (재미 요소)
             const bulletsPerSpawn = 2 + Math.floor(difficulty * 3);
 
             if (timestamp - game.lastBulletSpawn > spawnInterval) {
                 const pCenterX = game.player.x + game.player.width / 2;
                 const pCenterY = game.player.y + game.player.height / 2;
-
                 const currentDisplayScore = Math.floor(score / 10);
-                
-                // [난이도 완화 4] 레벨업 주기: 50점 (천천히 빨라짐)
                 const speedLevel = Math.floor(currentDisplayScore / 50); 
                 const speedBonus = speedLevel * 0.35; 
 
                 for (let i = 0; i < bulletsPerSpawn; i++) {
                     const side = Math.floor(Math.random() * 4);
                     let startX, startY;
-                    
                     switch(side) {
                         case 0: startX = Math.random() * 400; startY = -10; break; 
                         case 1: startX = Math.random() * 400; startY = 410; break; 
                         case 2: startX = -10; startY = Math.random() * 400; break; 
                         case 3: startX = 410; startY = Math.random() * 400; break; 
                     }
-
                     const dx = pCenterX - startX;
                     const dy = pCenterY - startY;
                     const distance = Math.sqrt(dx * dx + dy * dy);
-                    
-                    // [난이도 완화 5] 총알 속도 감소: 1.8 -> 1.6
                     const baseSpeed = 1.6;
                     const randomVar = Math.random() * 1.6; 
-                    
                     const bulletSpeed = (baseSpeed + speedBonus) + randomVar; 
 
                     game.bullets.push({
-                        x: startX,
-                        y: startY,
+                        x: startX, y: startY,
                         vx: (dx / distance) * bulletSpeed,
                         vy: (dy / distance) * bulletSpeed,
                         color: '#ffff00'
@@ -193,19 +316,13 @@
 
         function updateGame(timestamp) {
             const p = game.player;
-            
             if (game.keys['ArrowLeft'])  p.vx -= p.accel;
             if (game.keys['ArrowRight']) p.vx += p.accel;
             if (game.keys['ArrowUp'])    p.vy -= p.accel;
             if (game.keys['ArrowDown'])  p.vy += p.accel;
+            p.vx *= p.friction; p.vy *= p.friction;
+            p.x += p.vx; p.y += p.vy;
 
-            p.vx *= p.friction;
-            p.vy *= p.friction;
-
-            p.x += p.vx;
-            p.y += p.vy;
-
-            // 속도 제한
             const speed = Math.sqrt(p.vx*p.vx + p.vy*p.vy);
             if (speed > p.maxSpeed) {
                 p.vx = (p.vx / speed) * p.maxSpeed;
@@ -222,7 +339,6 @@
             game.bullets = game.bullets.filter(bullet => {
                 bullet.x += bullet.vx;
                 bullet.y += bullet.vy;
-
                 const hitBoxMargin = 4; 
                 if (
                     bullet.x > p.x + hitBoxMargin &&
@@ -247,14 +363,12 @@
             if (gameState === 'playing') {
                 updateGame(timestamp);
                 drawPlayer();
-                
                 game.bullets.forEach(b => {
                     ctx.fillStyle = b.color;
                     ctx.beginPath();
                     ctx.arc(b.x, b.y, BULLET_RADIUS, 0, Math.PI * 2);
                     ctx.fill();
                 });
-                
                 animationId = requestAnimationFrame(gameLoop);
             
             } else if (gameState === 'ready') {
@@ -286,14 +400,19 @@
                 ctx.font = '16px monospace';
                 ctx.fillText(`최종 점수: ${finalScore}`, 200, 220);
 
-                if (finalScore >= 265) {
+                if (finalScore >= 100) {
                     ctx.fillStyle = '#facc15'; 
                     ctx.font = 'bold 20px monospace';
                     ctx.fillText('🎉 상품 획득 성공! 🎉', 200, 260);
+
+                    if (!game.rewardRequested) {
+                        requestReward(finalScore);
+                        game.rewardRequested = true; 
+                    }
                 } else {
                     ctx.fillStyle = '#9ca3af';
                     ctx.font = '14px monospace';
-                    ctx.fillText(`🎁상품까지 ${265 - finalScore}점 남았습니다!`, 200, 260);
+                    ctx.fillText(`🎁상품까지 ${100 - finalScore}점 남았습니다!`, 200, 260);
                 }
                 
                 descEl.innerText = '스페이스바를 눌러 재시작';
