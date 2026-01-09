@@ -40,7 +40,7 @@
       <div id="chat-box" style="display: none; position: absolute; bottom: 80px; right: 0; width: 350px; height: 500px; background: rgba(0, 10, 30, 0.95); border: 2px solid #00ccff; border-radius: 10px; flex-direction: column; box-shadow: 0 0 30px rgba(0, 200, 255, 0.3);">
           
           <div style="padding: 15px; border-bottom: 1px solid #00ccff; background: #001122; color: #00ccff; font-weight: bold; display: flex; justify-content: space-between; align-items: center;">
-              <span>🔵 전술 기록관</span>
+              <span>🔵 K-Guard 가이드</span>
               <span style="cursor: pointer; font-size: 20px;" onclick="toggleChat()">×</span>
           </div>
 
@@ -86,8 +86,8 @@
           logs.innerHTML += `
             <div id="${loadingId}" style="margin: 8px 0; display: flex; align-items: center;">
                 <div style="border: 1px solid #00ccff; border-radius: 20px; padding: 6px 15px; color: #00ccff; font-size: 13px; animation: blink 1s infinite; background: rgba(0, 200, 255, 0.1);">
-                    👀 랭킹 북 뒤적거리는중...<br>
-                    🔄 잠시만 기다려주세요...
+                    👀 잠시만 기다려주세요...
+                    
                 </div>
             </div>`;
           logs.scrollTop = logs.scrollHeight;
@@ -116,8 +116,8 @@
                       logs.innerHTML += `
                         <div style="color: #ff3333; margin: 10px 0; text-shadow: 0 0 5px rgba(255,0,0,0.5);">
                             ⚠️ <strong>[위험] 관계자 외 출입금지</strong><br>
-                            ✅ 로그인 상태를 확인해주세요.<br>
-                            ⚡️ 어서 접속해서 성소를 지키러 와주세요.
+                            ✅ 내 정보는 로그인 시에만 확인할 수 있습니다.
+                            
                         </div>`;
                       logs.scrollTop = logs.scrollHeight;
                   }, 600);
