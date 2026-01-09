@@ -7,7 +7,11 @@ require('dotenv').config();
 const app = express();
 
 // --- Middleware ---
-app.use(cors()); // Enable CORS for all routes (fixes browser connection issues)
+app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 
 // --- Configuration ---

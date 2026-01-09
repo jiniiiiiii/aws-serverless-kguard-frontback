@@ -29,7 +29,7 @@ const Attendance = () => {
 
             // Success
             setStatus('success');
-            setReward(result.reward || 100); // Default 100 if API doesn't return it
+            setReward(result.data?.reward || 10); // Default 10
             setMessage("Attendance Checked! Reward Claimed.");
 
         } catch (error) {
