@@ -14,47 +14,46 @@
 
   <div id="chat-widget" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; font-family: 'Courier New', monospace;">
       <button onclick="toggleChat()" style="
-    position: relative; /* 위치 고정 */
-    width: 70px;        /* 캐릭터 크기 좀 더 키움 */
-    height: 70px;
-    background: transparent; /* 배경 투명하게 */
-    border: none;            /* 테두리 없앰 */
-    cursor: pointer;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    /* 기존 초록색 그림자 삭제 */
-">
-    <img src="/chat-icon.PNG" alt="Chat" style="
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-        /* 캐릭터 자체에 파란색 빛나는 효과 추가 */
-        filter: drop-shadow(0 0 8px rgba(0, 180, 255, 0.8));
-        transition: transform 0.2s; /* 마우스 올렸을 때 살짝 커지는 효과용 */
-    "
-    onmouseover="this.style.transform='scale(1.1)'" 
-    onmouseout="this.style.transform='scale(1.0)'"
-    >
-</button>
+        position: relative;
+        width: 70px;
+        height: 70px;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      ">
+        <img src="/chat-icon.PNG" alt="Chat" style="
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 0 8px rgba(0, 180, 255, 0.8)); /* 파란색 광채 */
+            transition: transform 0.2s;
+        "
+        onmouseover="this.style.transform='scale(1.1)'" 
+        onmouseout="this.style.transform='scale(1.0)'"
+        >
+      </button>
       
-      <div id="chat-box" style="display: none; position: absolute; bottom: 80px; right: 0; width: 350px; height: 500px; background: rgba(0, 0, 0, 0.95); border: 2px solid #00ff00; border-radius: 10px; flex-direction: column; box-shadow: 0 0 30px rgba(0, 255, 0, 0.2);">
-          <div style="padding: 15px; border-bottom: 1px solid #00ff00; background: #051a05; color: #00ff00; font-weight: bold; display: flex; justify-content: space-between; align-items: center;">
-              <span>🟢 전술 기록관</span>
+      <div id="chat-box" style="display: none; position: absolute; bottom: 80px; right: 0; width: 350px; height: 500px; background: rgba(0, 10, 30, 0.95); border: 2px solid #00ccff; border-radius: 10px; flex-direction: column; box-shadow: 0 0 30px rgba(0, 200, 255, 0.3);">
+          
+          <div style="padding: 15px; border-bottom: 1px solid #00ccff; background: #001122; color: #00ccff; font-weight: bold; display: flex; justify-content: space-between; align-items: center;">
+              <span>🔵 전술 기록관</span>
               <span style="cursor: pointer; font-size: 20px;" onclick="toggleChat()">×</span>
           </div>
 
           <div id="chat-logs" style="flex: 1; padding: 15px; overflow-y: auto; color: #e0e0e0; font-size: 14px; line-height: 1.5;">
-              <div style="color: #00ff00; margin-bottom: 15px; border-bottom: 1px dashed #004400; padding-bottom: 10px;">
-                  K-Guard에 오신 것을 환영합니다!.<br>
-                  무엇을 도와드릴까요?🛡️
+              <div style="color: #00ccff; margin-bottom: 15px; border-bottom: 1px dashed #005588; padding-bottom: 10px;">
+                  K-Guard에 오신 것을 환영합니다!<br>
+                  무엇을 도와드릴까요? 🛡️
               </div>
           </div>
 
-          <div style="padding: 10px; border-top: 1px solid #00ff00; display: flex; background: #000;">
+          <div style="padding: 10px; border-top: 1px solid #00ccff; display: flex; background: #000;">
               <input id="chat-input" type="text" placeholder="명령어 입력..." style="flex: 1; background: #111; color: #fff; border: 1px solid #333; padding: 10px; outline: none; border-radius: 4px;" onkeypress="if(event.keyCode==13) sendMessage()">
-              <button onclick="sendMessage()" style="margin-left: 8px; background: #004400; color: #00ff00; border: 1px solid #00ff00; cursor: pointer; padding: 0 15px; font-weight: bold; border-radius: 4px;">전송</button>
+              <button onclick="sendMessage()" style="margin-left: 8px; background: #003366; color: #00ccff; border: 1px solid #00ccff; cursor: pointer; padding: 0 15px; font-weight: bold; border-radius: 4px;">전송</button>
           </div>
       </div>
   </div>
@@ -83,34 +82,29 @@
 
           const loadingId = "loading-" + Date.now();
           
-          // [유지] 요청하신 로딩 멘트
+          // [수정] 로딩 멘트 스타일 파란색으로 변경
           logs.innerHTML += `
             <div id="${loadingId}" style="margin: 8px 0; display: flex; align-items: center;">
-                <div style="border: 1px solid #00ff00; border-radius: 20px; padding: 6px 15px; color: #00ff00; font-size: 13px; animation: blink 1s infinite; background: rgba(0, 255, 0, 0.1);">
+                <div style="border: 1px solid #00ccff; border-radius: 20px; padding: 6px 15px; color: #00ccff; font-size: 13px; animation: blink 1s infinite; background: rgba(0, 200, 255, 0.1);">
                     👀 랭킹 북 뒤적거리는중...<br>
                     🔄 잠시만 기다려주세요...
                 </div>
             </div>`;
           logs.scrollTop = logs.scrollHeight;
 
-          // ▼▼▼ [통합된 로직 시작] ▼▼▼
-          
-          // 1. 정보 조회
           const storedUser = localStorage.getItem('kguard_user_id');
           const realToken = localStorage.getItem('auth_token');
           const sessionKey = localStorage.getItem('kguard_session_key') || "guest-" + Date.now();
 
-          // 2. 신원 판별 (정예 요원 vs 떠돌이 생존자)
           let finalUserId;
           if (storedUser && realToken) {
-              finalUserId = storedUser; // 로그인 상태
+              finalUserId = storedUser;
           } else {
-              finalUserId = "guest-survivor"; // 비로그인(게스트) 상태
+              finalUserId = "guest-survivor";
           }
 
           console.log("Security Check:", { Mode: finalUserId === storedUser ? "Member" : "Guest" });
 
-          // 3. [게스트 필터] 비로그인 상태인데 '개인 정보'를 물어보면 차단
           if (finalUserId === "guest-survivor") {
               const forbiddenWords = ['내 랭킹', '내 순위', '내 점수', '제 점수', '몇등', '몇 등', '내 등수', '내 기록', '내 정보'];
               
@@ -118,7 +112,7 @@
                   setTimeout(() => {
                       document.getElementById(loadingId).remove();
                       
-                      // [유지] 요청하신 에러 메시지 스타일 적용
+                      // [경고 메시지] 빨간색은 경고색이라 그대로 둠 (가독성 위해)
                       logs.innerHTML += `
                         <div style="color: #ff3333; margin: 10px 0; text-shadow: 0 0 5px rgba(255,0,0,0.5);">
                             ⚠️ <strong>[위험] 관계자 외 출입금지</strong><br>
@@ -127,19 +121,17 @@
                         </div>`;
                       logs.scrollTop = logs.scrollHeight;
                   }, 600);
-                  return; // ★ 서버 전송 차단
+                  return; 
               }
           }
           
-          // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
-
           try {
               const res = await fetch(API_URL, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ 
                       message: msg, 
-                      user_id: finalUserId, // 판별된 아이디 전송
+                      user_id: finalUserId, 
                       session_id: sessionKey
                   })
               });
@@ -147,8 +139,9 @@
               const data = await res.json();
               document.getElementById(loadingId).remove();
               
+              // [수정] AI 답변 텍스트 파란색으로 변경
               const formattedReply = data.reply.replace(/\n/g, '<br>');
-              logs.innerHTML += `<div style="color: #00ff00; margin: 10px 0; text-shadow: 0 0 5px rgba(0,255,0,0.3);">${formattedReply}</div>`;
+              logs.innerHTML += `<div style="color: #00ccff; margin: 10px 0; text-shadow: 0 0 5px rgba(0,200,255,0.3);">${formattedReply}</div>`;
 
           } catch (e) {
               document.getElementById(loadingId).remove();
@@ -163,7 +156,8 @@
           @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
           ::-webkit-scrollbar { width: 8px; }
           ::-webkit-scrollbar-track { background: #000; }
-          ::-webkit-scrollbar-thumb { background: #004400; border-radius: 4px; }
+          /* 스크롤바도 파란색으로 변경 */
+          ::-webkit-scrollbar-thumb { background: #003366; border-radius: 4px; }
       `;
       document.head.appendChild(style);
   </script>
