@@ -259,7 +259,7 @@ export const api = {
     checkAttendance: async (userId) => {
         try {
             // ALB URL (Hardcoded fallback for easier testing)
-            const targetUrl = import.meta.env.VITE_API_ATTENDANCE_URL || 'http://kg-dev-lb-esc-ap-ne-2-604922001.ap-northeast-2.elb.amazonaws.com/attendance';
+            const targetUrl = import.meta.env.VITE_API_ATTENDANCE_URL || 'https://dv3l3ylow969j.cloudfront.net/attendance';
 
             const response = await fetch(targetUrl, {
                 method: 'POST',
