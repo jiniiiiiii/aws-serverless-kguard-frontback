@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Space Shooter - Balance Patch</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #111827;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            color: white;
+            font-family: monospace;
+        }
+        canvas {
+            border: 4px solid #84cc16;
+            border-radius: 8px;
+            box-shadow: 0 0 25px rgba(132, 204, 22, 0.6);
+            background-color: #020617; 
+        }
+        .ui-text {
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #84cc16;
+            text-shadow: 0 0 10px rgba(132, 204, 22, 0.5);
+        }
+        .desc-text {
+            margin-top: 1rem;
+            color: #9ca3af;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="scoreBoard" class="ui-text">PRESS SPACE TO START</div>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <div id="descBoard" class="desc-text">중앙 시작 | 50점마다 속도 증가</div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('scoreBoard');
+        const descEl = document.getElementById('descBoard');
+
+        let gameState = 'ready'; 
+        let score = 0;
+        let animationId = null;
+
+        const BULLET_RADIUS = 2.5;
+
+        const game = {
+            player: { x: 185, y: 185, width: 30, height: 30, speed: 4 },
+            bullets: [],
+            keys: {},
+            lastBulletSpawn: 0
+        };
+
+        window.addEventListener('keydown', (e) => {
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                e.preventDefault();
+                game.keys[e.key] = true;
+            }
+            if (e.key === ' ' && gameState !== 'playing') {
+                startGame();
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            game.keys[e.key] = false;
+        });
+
+        function startGame() {
+            game.player = { x: 185, y: 185, width: 30, height: 30, speed: 4 };
+            game.bullets = [];
+            game.lastBulletSpawn = 0;
+            score = 0;
+            gameState = 'playing';
+            descEl.innerText = '50점마다 점점 빨라집니다!';
+            gameLoop(0);
+        }
+
+        // 몬스터 그리기 (이전과 동일)
+        function drawPlayer() {
+            const p = game.player;
+            const x = p.x;
+            const y = p.y;
+            const s = 2; 
+
+            // 뿔/지느러미
+            ctx.fillStyle = '#ef4444'; 
+            ctx.fillRect(x + 6*s, y, 4*s, 2*s);
+            ctx.fillRect(x + 11*s, y + 2*s, 2*s, 4*s);
+
+            // 몸통
+            ctx.fillStyle = '#a3e635'; 
+            ctx.fillRect(x + 2*s, y + 2*s, 10*s, 11*s); 
+
+            // 노란 뿔
+            ctx.fillStyle = '#facc15'; 
+            ctx.fillRect(x, y + 2*s, 2*s, 3*s); 
+            ctx.fillRect(x + 10*s, y + 2*s, 2*s, 3*s); 
+
+            // 눈
+            ctx.fillStyle = '#dc2626'; 
+            ctx.fillRect(x + 3*s, y + 5*s, 3*s, 2*s); 
+            ctx.fillRect(x + 8*s, y + 5*s, 3*s, 2*s); 
+            
+            ctx.fillStyle = '#ffffff'; 
+            ctx.fillRect(x + 5*s, y + 5*s, 1*s, 1*s);
+            ctx.fillRect(x + 10*s, y + 5*s, 1*s, 1*s);
+
+            // 입
+            ctx.fillStyle = '#7f1d1d'; 
+            ctx.fillRect(x + 3*s, y + 9*s, 8*s, 3*s);
+            
+            ctx.fillStyle = '#ffffff'; 
+            ctx.fillRect(x + 4*s, y + 9*s, 1*s, 1*s); 
+            ctx.fillRect(x + 9*s, y + 9*s, 1*s, 1*s); 
+            ctx.fillRect(x + 6*s, y + 11*s, 2*s, 1*s); 
+
+            // 다리
+            ctx.fillStyle = '#4d7c0f';
+            ctx.fillRect(x + 3*s, y + 13*s, 2*s, 2*s);
+            ctx.fillRect(x + 9*s, y + 13*s, 2*s, 2*s);
+        }
+
+        function spawnBullets(timestamp) {
+            // 난이도(탄막 생성 주기)는 그대로 유지
+            const difficulty = Math.min(score / 5000, 1); 
+            const spawnInterval = 300 - (difficulty * 220); 
+            const bulletsPerSpawn = 1 + Math.floor(difficulty * 3);
+
+            if (timestamp - game.lastBulletSpawn > spawnInterval) {
+                const pCenterX = game.player.x + game.player.width / 2;
+                const pCenterY = game.player.y + game.player.height / 2;
+
+                const currentDisplayScore = Math.floor(score / 10);
+                
+                // [수정 1] 50점 단위로 레벨 증가
+                const speedLevel = Math.floor(currentDisplayScore / 50); 
+                
+                // [밸런스 조절] 주기가 빨라졌으므로 증가폭은 0.5 -> 0.4로 미세 조정
+                const speedBonus = speedLevel * 0.4; 
+
+                for (let i = 0; i < bulletsPerSpawn; i++) {
+                    const side = Math.floor(Math.random() * 4);
+                    let startX, startY;
+                    
+                    switch(side) {
+                        case 0: startX = Math.random() * 400; startY = -10; break; 
+                        case 1: startX = Math.random() * 400; startY = 410; break; 
+                        case 2: startX = -10; startY = Math.random() * 400; break; 
+                        case 3: startX = 410; startY = Math.random() * 400; break; 
+                    }
+
+                    const dx = pCenterX - startX;
+                    const dy = pCenterY - startY;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    // [수정 2] 기본 속도 하향: 3.5 -> 2.0 (초반에 훨씬 피하기 쉬움)
+                    const baseSpeed = 2.0;
+                    const randomVar = Math.random() * 2.0; // 랜덤 변수도 약간 줄임
+                    
+                    const bulletSpeed = (baseSpeed + speedBonus) + randomVar; 
+
+                    game.bullets.push({
+                        x: startX,
+                        y: startY,
+                        vx: (dx / distance) * bulletSpeed,
+                        vy: (dy / distance) * bulletSpeed,
+                        color: '#ffff00'
+                    });
+                }
+                game.lastBulletSpawn = timestamp;
+            }
+        }
+
+        function updateGame(timestamp) {
+            const p = game.player;
+            
+            if (game.keys['ArrowLeft']) p.x = Math.max(0, p.x - p.speed);
+            if (game.keys['ArrowRight']) p.x = Math.min(400 - p.width, p.x + p.speed);
+            if (game.keys['ArrowUp']) p.y = Math.max(0, p.y - p.speed);
+            if (game.keys['ArrowDown']) p.y = Math.min(400 - p.height, p.y + p.speed);
+
+            spawnBullets(timestamp);
+
+            game.bullets = game.bullets.filter(bullet => {
+                bullet.x += bullet.vx;
+                bullet.y += bullet.vy;
+
+                const hitBoxMargin = 4; 
+                if (
+                    bullet.x > p.x + hitBoxMargin &&
+                    bullet.x < p.x + p.width - hitBoxMargin &&
+                    bullet.y > p.y + hitBoxMargin &&
+                    bullet.y < p.y + p.height - hitBoxMargin
+                ) {
+                    gameState = 'gameOver';
+                    return false;
+                }
+                return bullet.x > -50 && bullet.x < 450 && bullet.y > -50 && bullet.y < 450;
+            });
+
+            score++;
+            scoreEl.innerText = `SCORE: ${Math.floor(score / 10)}`;
+        }
+
+        function gameLoop(timestamp) {
+            ctx.fillStyle = '#020617'; 
+            ctx.fillRect(0, 0, 400, 400);
+
+            if (gameState === 'playing') {
+                updateGame(timestamp);
+                drawPlayer();
+                
+                game.bullets.forEach(b => {
+                    ctx.fillStyle = b.color;
+                    ctx.beginPath();
+                    ctx.arc(b.x, b.y, BULLET_RADIUS, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                
+                animationId = requestAnimationFrame(gameLoop);
+            
+            } else if (gameState === 'ready') {
+                drawPlayer();
+                ctx.fillStyle = '#fff';
+                ctx.font = '20px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('MONSTER DODGE', 200, 150);
+                
+            } else if (gameState === 'gameOver') {
+                drawPlayer();
+                game.bullets.forEach(b => {
+                    ctx.fillStyle = b.color;
+                    ctx.beginPath();
+                    ctx.arc(b.x, b.y, BULLET_RADIUS, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(0, 0, 400, 400);
+                
+                ctx.fillStyle = '#ef4444';
+                ctx.font = '30px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('GAME OVER', 200, 180);
+                
+                ctx.fillStyle = '#fff';
+                ctx.font = '16px monospace';
+                ctx.fillText(`최종 점수: ${Math.floor(score / 10)}`, 200, 220);
+                
+                descEl.innerText = '스페이스바를 눌러 재시작';
+            }
+        }
+
+        gameLoop(0);
+    </script>
+</body>
+</html>
