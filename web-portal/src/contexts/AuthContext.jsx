@@ -73,8 +73,11 @@ export const AuthProvider = ({ children }) => {
             const token = await cognitoLogin(username, password);
             localStorage.setItem('auth_token', token);
 
-            // [Modified] S3 프로필 조회 제거 -> 토큰/기본값 사용
+            // [Fix] Decode token to get 'sub' (UUID) immediately
+            const payload = jwtDecode(token);
+
             const defaultProfile = {
+                sub: payload['sub'], // Important: Extract UUID
                 avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=" + username,
                 role: "Guardian",
                 email: username,
