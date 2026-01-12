@@ -34,6 +34,7 @@ export const AuthProvider = ({ children }) => {
 
                     // 기본 유저 정보 (토큰 기반)
                     let userState = {
+                        sub: payload['sub'], // Immutable UUID
                         email: email,
                         name: email.includes('@') ? email.split('@')[0] : username,
                         username: username

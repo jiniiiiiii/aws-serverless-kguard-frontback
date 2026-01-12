@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>k-가드</title>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+
+  <div id="chat-widget" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; font-family: 'Courier New', monospace;">
+      <button onclick="toggleChat()" style="
+        position: relative;
+        width: 70px;
+        height: 70px;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      ">
+        <img src="/chat-icon.PNG" alt="Chat" style="
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 0 8px rgba(0, 180, 255, 0.8)); /* 파란색 광채 */
+            transition: transform 0.2s;
+        "
+        onmouseover="this.style.transform='scale(1.1)'" 
+        onmouseout="this.style.transform='scale(1.0)'"
+        >
+      </button>
+      
+      <div id="chat-box" style="display: none; position: absolute; bottom: 80px; right: 0; width: 350px; height: 500px; background: rgba(0, 10, 30, 0.95); border: 2px solid #00ccff; border-radius: 10px; flex-direction: column; box-shadow: 0 0 30px rgba(0, 200, 255, 0.3);">
+          
+          <div style="padding: 15px; border-bottom: 1px solid #00ccff; background: #001122; color: #00ccff; font-weight: bold; display: flex; justify-content: space-between; align-items: center;">
+              <span>🔵 K-Guard 가이드</span>
+              <span style="cursor: pointer; font-size: 20px;" onclick="toggleChat()">×</span>
+          </div>
+
+          <div id="chat-logs" style="flex: 1; padding: 15px; overflow-y: auto; color: #e0e0e0; font-size: 14px; line-height: 1.5;">
+              <div style="color: #00ccff; margin-bottom: 15px; border-bottom: 1px dashed #005588; padding-bottom: 10px;">
+                  환영합니다 용사님!<br>
+                  무엇을 도와드릴까요? 🛡️
+              </div>
+          </div>
+
+          <div style="padding: 10px; border-top: 1px solid #00ccff; display: flex; background: #000;">
+              <input id="chat-input" type="text" placeholder="명령어 입력..." style="flex: 1; background: #111; color: #fff; border: 1px solid #333; padding: 10px; outline: none; border-radius: 4px;" onkeypress="if(event.keyCode==13) sendMessage()">
+              <button onclick="sendMessage()" style="margin-left: 8px; background: #003366; color: #00ccff; border: 1px solid #00ccff; cursor: pointer; padding: 0 15px; font-weight: bold; border-radius: 4px;">전송</button>
+          </div>
+      </div>
+  </div>
+
+  <script>
+      const API_URL = "https://hwuhh3d5d45nbsyu7beqld7twi0dfpsk.lambda-url.ap-northeast-2.on.aws/";
+
+      function toggleChat() {
+          const box = document.getElementById('chat-box');
+          if (box.style.display === 'none' || box.style.display === '') {
+              box.style.display = 'flex';
+          } else {
+              box.style.display = 'none';
+          }
+      }
+
+      async function sendMessage() {
+          const input = document.getElementById('chat-input');
+          const logs = document.getElementById('chat-logs');
+          const msg = input.value;
+          if (!msg.trim()) return;
+
+          logs.innerHTML += `<div style="text-align: right; margin: 8px 0; color: #00ff00;">> ${msg}</div>`;
+          input.value = '';
+          logs.scrollTop = logs.scrollHeight;
+
+          const loadingId = "loading-" + Date.now();
+          
+          // [수정] 로딩 멘트 스타일 파란색으로 변경
+          logs.innerHTML += `
+            <div id="${loadingId}" style="margin: 8px 0; display: flex; align-items: center;">
+                <div style="border: 1px solid #00ccff; border-radius: 20px; padding: 6px 15px; color: #00ccff; font-size: 13px; animation: blink 1s infinite; background: rgba(0, 200, 255, 0.1);">
+                    👀 잠시만 기다려주세요...
+                    
+                </div>
+            </div>`;
+          logs.scrollTop = logs.scrollHeight;
+
+          const storedUser = localStorage.getItem('kguard_user_id');
+          const realToken = localStorage.getItem('auth_token');
+          const sessionKey = localStorage.getItem('kguard_session_key') || "guest-" + Date.now();
+
+          let finalUserId;
+          if (storedUser && realToken) {
+              finalUserId = storedUser;
+          } else {
+              finalUserId = "guest-survivor";
+          }
+
+          console.log("Security Check:", { Mode: finalUserId === storedUser ? "Member" : "Guest" });
+
+          if (finalUserId === "guest-survivor") {
+              const forbiddenWords = ['내 랭킹', '내 순위', '내 점수', '제 점수', '몇등', '몇 등', '내 등수', '내 기록'];
+              
+              if (forbiddenWords.some(word => msg.includes(word))) {
+                  setTimeout(() => {
+                      document.getElementById(loadingId).remove();
+                      
+                      // [경고 메시지] 빨간색은 경고색이라 그대로 둠 (가독성 위해)
+                      logs.innerHTML += `
+                        <div style="color: #ff3333; margin: 10px 0; text-shadow: 0 0 5px rgba(255,0,0,0.5);">
+                            ⚠️ <strong>[위험] 관계자 외 출입금지</strong><br>
+                            ✅ 내 정보는 로그인 시에만 확인할 수 있습니다.
+                            
+                        </div>`;
+                      logs.scrollTop = logs.scrollHeight;
+                  }, 600);
+                  return; 
+              }
+          }
+          
+          try {
+              const res = await fetch(API_URL, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ 
+                      message: msg, 
+                      user_id: finalUserId, 
+                      session_id: sessionKey
+                  })
+              });
+              
+              const data = await res.json();
+              document.getElementById(loadingId).remove();
+              
+              // [수정] AI 답변 텍스트 파란색으로 변경
+              const formattedReply = data.reply.replace(/\n/g, '<br>');
+              logs.innerHTML += `<div style="color: #00ccff; margin: 10px 0; text-shadow: 0 0 5px rgba(0,200,255,0.3);">${formattedReply}</div>`;
+
+          } catch (e) {
+              document.getElementById(loadingId).remove();
+              console.error(e);
+              logs.innerHTML += `<div style="color: red; margin: 5px 0;">[시스템 오류] 통신 실패.</div>`;
+          }
+          logs.scrollTop = logs.scrollHeight;
+      }
+
+      const style = document.createElement('style');
+      style.innerHTML = `
+          @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+          ::-webkit-scrollbar { width: 8px; }
+          ::-webkit-scrollbar-track { background: #000; }
+          /* 스크롤바도 파란색으로 변경 */
+          ::-webkit-scrollbar-thumb { background: #003366; border-radius: 4px; }
+      `;
+      document.head.appendChild(style);
+  </script>
+</body>
+</html>

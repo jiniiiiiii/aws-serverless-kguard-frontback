@@ -7,11 +7,7 @@ require('dotenv').config();
 const app = express();
 
 // --- Middleware ---
-app.use(cors({
-    origin: '*',
-    methods: ['GET', 'POST', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-}));
+app.use(cors()); // Enable CORS for all routes (fixes browser connection issues)
 app.use(express.json());
 
 // --- Configuration ---
@@ -87,15 +83,15 @@ app.post('/attendance', async (req, res) => {
 
         let reward = 10; // Base Reward
         let bonus = 0;
-        let message = `출석체크 완료! +${reward} Gold`;
+        let message = `출석체크 완료! +${reward} Cash`;
 
         // 3-Day Consecutive Bonus
         if (newStreak > 0 && newStreak % 3 === 0) {
             bonus = 30; // Bonus for every 3rd day
             reward += bonus;
-            message = `🔥 ${newStreak}일 연속 출석! 보너스 +${bonus} Gold 포함 총 +${reward} Gold!`;
+            message = `🔥 ${newStreak}일 연속 출석! 보너스 +${bonus} Cash 포함 총 +${reward} Cash!`;
         } else if (newStreak > 1) {
-            message = `${newStreak}일 연속 출석 달성! +${reward} Gold`;
+            message = `${newStreak}일 연속 출석 달성! +${reward} Cash`;
         }
 
         // 4. Atomic Update (Optimistic Locking)
@@ -103,7 +99,7 @@ app.post('/attendance', async (req, res) => {
         const updateParams = {
             TableName: TABLE_NAME,
             Key: { 'user_id': user_id },
-            UpdateExpression: "SET gold = if_not_exists(gold, :zero) + :reward, last_attendance_date = :today, consecutive_streak = :streak",
+            UpdateExpression: "SET cash = if_not_exists(cash, :zero) + :reward, last_attendance_date = :today, consecutive_streak = :streak",
             ConditionExpression: "last_attendance_date = :oldDate OR attribute_not_exists(last_attendance_date)",
             ExpressionAttributeValues: {
                 ":reward": reward,

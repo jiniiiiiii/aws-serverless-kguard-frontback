@@ -23,13 +23,13 @@ const Attendance = () => {
 
         try {
             // Call the ECS API
-            // Note: user.username is the user_id in DynamoDB
-            const userId = user.username || user.email;
+            // Note: user.sub is the immutable Cognito UUID
+            const userId = user.sub || user.username || user.email;
             const result = await api.checkAttendance(userId);
 
             // Success
             setStatus('success');
-            setReward(result.data?.reward || 10); // Default 10
+            setReward(result.reward || 100); // Default 100 if API doesn't return it
             setMessage("Attendance Checked! Reward Claimed.");
 
         } catch (error) {
