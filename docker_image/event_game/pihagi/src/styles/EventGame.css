@@ -1,0 +1,128 @@
+@font-face {
+    font-family: 'Netmarble';
+    src: url('/fonts/netmarble_Bold.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+:root {
+    /* Colors */
+    --color-bg-primary: #0f172a;
+    --color-bg-secondary: #1e293b;
+    --color-text-primary: #f8fafc;
+    --color-text-secondary: #94a3b8;
+
+    --color-accent-blue: #00f3ff;
+    --color-accent-gold: #ffd700;
+    --color-accent-purple: #a855f7;
+
+    --color-danger: #ef4444;
+    --color-success: #22c55e;
+
+    /* Glassmorphism */
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+
+    /* Spacing */
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --radius-md: 0.75rem;
+    --radius-lg: 1rem;
+}
+
+/* Navbar specific utils */
+.glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: var(--radius-md);
+}
+
+.container {
+    max-width: 1800px;
+    width: 95%;
+    margin: 0 auto;
+    padding: 0 var(--spacing-md);
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #111827;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    color: white;
+    font-family: 'Netmarble', monospace;
+}
+
+.game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+canvas {
+    border: 4px solid #84cc16;
+    border-radius: 8px;
+    box-shadow: 0 0 25px rgba(132, 204, 22, 0.6);
+    background-color: #020617;
+}
+
+.ui-text {
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #84cc16;
+    text-shadow: 0 0 10px rgba(132, 204, 22, 0.5);
+}
+
+.desc-text {
+    margin-top: 1rem;
+    color: #9ca3af;
+    font-size: 0.9rem;
+}
+
+/* Modal/Alert Styles (Simple) */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+.modal-content {
+    background: #1e293b;
+    padding: 2rem;
+    border-radius: 12px;
+    border: 1px solid #38bdf8;
+    text-align: center;
+    max-width: 400px;
+}
+
+.modal-btn {
+    margin-top: 1rem;
+    padding: 0.5rem 1rem;
+    background: #0ea5e9;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.modal-btn:hover {
+    background: #0284c7;
+}

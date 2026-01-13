@@ -7,6 +7,7 @@ import MyPage from './pages/MyPage';
 import Login from './pages/Login';
 import Ranking from './pages/Ranking';
 import Attendance from './pages/Attendance';
+import EventGame from './pages/EventGame';
 import Footer from './components/Footer';
 import './styles/index.css';
 
@@ -49,6 +50,14 @@ const AppContent = () => {
             element={
               <RequireAuth>
                 <Attendance />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/event-game"
+            element={
+              <RequireAuth>
+                <EventGame />
               </RequireAuth>
             }
           />

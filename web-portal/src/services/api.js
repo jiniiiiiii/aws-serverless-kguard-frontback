@@ -279,5 +279,33 @@ export const api = {
             console.error("Attendance API Error:", error);
             throw error;
         }
+    },
+
+    // [New] Event Game Reward
+    claimEventReward: async (userId, score, token) => {
+        try {
+            // Use the tested URL (ALB Port 8080)
+            const targetUrl = import.meta.env.VITE_API_EVENT_GAME_URL || 'http://main.kguard.click:8080/api/claim-reward';
+
+            const response = await fetch(targetUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ userId, score })
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                // Return data so the UI can handle 'ALREADY_CLAIMED' etc.
+                return { success: false, ...data };
+            }
+            return { success: true, ...data };
+
+        } catch (error) {
+            console.error("Event Game API Error:", error);
+            return { success: false, error: error.message };
+        }
     }
 };
