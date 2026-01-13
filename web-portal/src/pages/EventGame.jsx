@@ -7,7 +7,7 @@ const REWARD_DISPLAY_AMOUNT = 3; // "3 Cash" 지급 (서버 설정과 일치)
 const EVENT_KEY = "event_reward_202601_claimed";
 
 const EventGame = () => {
-    console.log("🚀 EventGame Component Loaded! (Version: Debug-Buttons-Added)");
+
     const { user } = useAuth(); // AuthContext에서 유저 정보 가져오기
     const canvasRef = useRef(null);
     const [gameState, setGameState] = useState('ready'); // ready, playing, gameOver
@@ -83,34 +83,33 @@ const EventGame = () => {
 
         if (!user) {
             console.warn("❌ No user logged in");
-            setMessage("로그인이 필요합니다.");
+            alert("로그인이 필요합니다!");
             setRewardStatus('error');
             return;
         }
 
-        // [Optional] 클라이언트 중복 체크 (UI 리액션용)
-        // const isClaimed = localStorage.getItem(EVENT_KEY) === "true";
-        // if (isClaimed) {
-        //    setRewardStatus('already');
-        //    return;
-        // }
-        // 사용자가 "무제한"을 원했으므로 클라이언트 체크 제거
-
         setRewardStatus('claiming');
 
-        const token = localStorage.getItem('auth_token');
-        console.log("📤 Sending API Request to claimEventReward...");
-        const result = await api.claimEventReward(user.sub, finalScore, token);
-        console.log("📥 API Response:", result);
+        try {
+            const token = localStorage.getItem('auth_token');
+            const result = await api.claimEventReward(user.sub, finalScore, token);
+            console.log("📥 API Response:", result);
 
-        if (result.success) {
-            localStorage.setItem(EVENT_KEY, "true");
-            setRewardStatus('success');
-        } else if (result.result === 'ALREADY_CLAIMED') {
-            setRewardStatus('already');
-        } else {
-            console.error("❌ Reward Error:", result.message || result.error);
-            setMessage(result.message || result.error || "보상 지급 실패");
+            if (result.success) {
+                localStorage.setItem(EVENT_KEY, "true");
+                setRewardStatus('success');
+                alert(`🎉 축하합니다! ${REWARD_DISPLAY_AMOUNT} Cash가 지급되었습니다!`);
+            } else if (result.result === 'ALREADY_CLAIMED') {
+                setRewardStatus('already');
+                alert("⚠️ 이미 보상을 수령하셨습니다.");
+            } else {
+                console.error("❌ Reward Error:", result.message || result.error);
+                setRewardStatus('error');
+                alert("❌ 보상 지급 실패: " + (result.message || result.error));
+            }
+        } catch (e) {
+            console.error("API Call Exception:", e);
+            alert("❌ 서버 통신 오류가 발생했습니다.");
             setRewardStatus('error');
         }
     };
@@ -222,6 +221,7 @@ const EventGame = () => {
         if (final >= REWARD_TARGET_SCORE) {
             ctx.fillStyle = '#facc15'; ctx.font = 'bold 24px "Netmarble", monospace'; ctx.fillText('상품 획득 성공!', 200, 260);
             if (!gameRef.current.rewardRequested) {
+                console.log(`🎯 Target Reached! Score: ${final} >= ${REWARD_TARGET_SCORE}. Triggering Request...`);
                 gameRef.current.rewardRequested = true;
                 requestReward(final);
             }
@@ -266,13 +266,16 @@ const EventGame = () => {
                 {/* 만약 게임 중 바로 뜨길 원하면 여기에 별도 모달 추가 가능 */}
 
             </div>
-            {/* DEBUG BUTTON: Only for testing connectivity */}
+
+
+            {/* DEBUG BUTTON: Only for testing connectivity (Uncomment for demo/video)
             <button
                 onClick={() => requestReward(999)}
                 style={{ marginTop: '2rem', padding: '0.5rem 1rem', backgroundColor: '#6366f1', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
             >
                 🛠️ DEBUG: 강제 보상 요청 (테스트용)
             </button>
+            */}
 
             <p style={{ marginTop: '1rem', color: '#6b7280' }}>
                 방향키: 이동 | 스페이스바: 시작
