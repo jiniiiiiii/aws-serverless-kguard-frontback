@@ -7,6 +7,7 @@ const REWARD_DISPLAY_AMOUNT = 3; // "3 Cash" 지급 (서버 설정과 일치)
 const EVENT_KEY = "event_reward_202601_claimed";
 
 const EventGame = () => {
+    console.log("🚀 EventGame Component Loaded! (Version: Debug-Buttons-Added)");
     const { user } = useAuth(); // AuthContext에서 유저 정보 가져오기
     const canvasRef = useRef(null);
     const [gameState, setGameState] = useState('ready'); // ready, playing, gameOver
@@ -265,6 +266,14 @@ const EventGame = () => {
                 {/* 만약 게임 중 바로 뜨길 원하면 여기에 별도 모달 추가 가능 */}
 
             </div>
+            {/* DEBUG BUTTON: Only for testing connectivity */}
+            <button
+                onClick={() => requestReward(999)}
+                style={{ marginTop: '2rem', padding: '0.5rem 1rem', backgroundColor: '#6366f1', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+            >
+                🛠️ DEBUG: 강제 보상 요청 (테스트용)
+            </button>
+
             <p style={{ marginTop: '1rem', color: '#6b7280' }}>
                 방향키: 이동 | 스페이스바: 시작
             </p>
