@@ -54,6 +54,8 @@ const EventGame = () => {
                 gameRef.current.isPlaying = true;
                 gameLoop(0);
             }
+        } else if (gameState === 'gameOver') {
+            drawGameOver();
         }
 
         return () => {
