@@ -1,25 +1,25 @@
 [
   {
     "id": "Char0",
-    "name": "Guardian Knight",
+    "name": "영훈",
     "isAcquired": true,
     "img": "/characters/고양이.jpg"
   },
   {
     "id": "Char1",
-    "name": "Archer Elf",
+    "name": "유진",
     "isAcquired": true,
     "img": "/characters/사모예드.jpg"
   },
   {
     "id": "Char2",
-    "name": "Mystic Mage",
+    "name": "대윤",
     "isAcquired": false,
     "img": "/characters/웰시코기.jpg"
   },
   {
     "id": "Char3",
-    "name": "Cyber Ninja",
+    "name": "도연",
     "isAcquired": false,
     "img": "/characters/기린.jpg"
   }

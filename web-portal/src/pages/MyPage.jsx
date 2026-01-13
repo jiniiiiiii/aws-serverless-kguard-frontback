@@ -46,10 +46,10 @@ const MyPage = () => {
     const handleLogout = () => {
         // 1. 챗봇이 기억하던 아이디 삭제
         localStorage.removeItem('kguard_user_id');
-        
+
         // 2. 대화방 번호 삭제 (이걸 지워야 다음 로그인 때 대화가 리셋됨)
         localStorage.removeItem('kguard_session_key');
-        
+
         // 3. 원래 로그아웃 기능 실행
         logout();
     };
@@ -93,7 +93,7 @@ const MyPage = () => {
                     </div>
                     <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
                         <Button variant="outline">Edit Profile</Button>
-                        
+
                         {/* ▼▼▼ [수정됨] onClick 이벤트를 handleLogout으로 변경 ▼▼▼ */}
                         <Button variant="ghost" onClick={handleLogout} style={{ color: 'var(--color-danger)' }}>
                             <LogOut size={18} style={{ marginRight: '0.5rem' }} /> Logout
@@ -119,36 +119,31 @@ const MyPage = () => {
                     </div>
                 </Card>
 
-                {/* High Score Card */}
+                {/* Cash Card */}
                 <Card delay={0.1}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <div style={{ padding: '1rem', background: 'rgba(255, 140, 0, 0.1)', borderRadius: '50%' }}>
-                            <Trophy size={32} color="var(--color-accent-gold)" />
+                            <Zap size={32} color="var(--color-accent-gold)" />
                         </div>
                         <div>
-                            <p style={{ margin: 0, color: 'var(--color-text-secondary)' }}>High Score</p>
+                            <p style={{ margin: 0, color: 'var(--color-text-secondary)' }}>Cash</p>
                             <h3 className="text-glow-gold" style={{ margin: 0, fontSize: '2rem' }}>
-                                {stats.highScore.toLocaleString()}
+                                {stats.cash ? stats.cash.toLocaleString() : 0}
                             </h3>
                         </div>
                     </div>
                 </Card>
 
-                {/* Rank Card */}
+                {/* High Score Card */}
                 <Card delay={0.2}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <div style={{ padding: '1rem', background: 'rgba(0, 243, 255, 0.1)', borderRadius: '50%' }}>
-                            <Users size={32} color="var(--color-accent-blue)" />
+                            <Trophy size={32} color="var(--color-accent-blue)" />
                         </div>
                         <div>
-                            <p style={{ margin: 0, color: 'var(--color-text-secondary)' }}>Global Rank</p>
+                            <p style={{ margin: 0, color: 'var(--color-text-secondary)' }}>High Score</p>
                             <h3 className="text-glow-blue" style={{ margin: 0, fontSize: '2rem' }}>
-                                {stats.rank && stats.rank > 0 ? `#${stats.rank}` : 'Unranked'}
-                                {stats.topPercent && (
-                                    <span style={{ fontSize: '1rem', color: 'var(--color-text-secondary)', marginLeft: '0.5rem' }}>
-                                        (Top {stats.topPercent}%)
-                                    </span>
-                                )}
+                                {stats.highScore.toLocaleString()}
                             </h3>
                         </div>
                     </div>

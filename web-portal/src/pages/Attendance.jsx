@@ -78,7 +78,7 @@ const Attendance = () => {
 
                     <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>Daily Check-in</h1>
                     <p style={{ color: 'var(--color-text-secondary)', marginBottom: '2rem' }}>
-                        Log in daily to earn Gold rewards!
+                        Log in daily to earn Cash rewards!
                     </p>
 
                     {/* Status Message Area */}
@@ -113,7 +113,7 @@ const Attendance = () => {
                             style={{ marginBottom: '2rem' }}
                         >
                             <div style={{ fontSize: '3rem', fontWeight: 'bold', color: '#FFD700', textShadow: '0 0 20px rgba(255, 215, 0, 0.5)' }}>
-                                +{reward} <Coins size={32} style={{ verticalAlign: 'middle' }} />
+                                +{reward} Cash <Coins size={32} style={{ verticalAlign: 'middle' }} />
                             </div>
                         </motion.div>
                     )}

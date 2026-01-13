@@ -163,10 +163,12 @@ def lambda_handler(event, context):
             pass
 
         # 4. 결과 병합 및 반환
+        # 4. 결과 병합 및 반환
         result = {
             "highScore": my_score,
             "rank": my_rank,
             "gold": int(item.get('gold', 0)),
+            "cash": int(item.get('cash', 0)),  # [NEW] Cash 필드 추가
             "accountCreatedAt": item.get('account_created_at', datetime.now().isoformat()),
             "region": COGNITO_REGION,
             "email": item.get('email', ''),
