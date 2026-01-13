@@ -33,7 +33,11 @@ const EventGame = () => {
                 gameRef.current.keys[e.key] = true;
             }
             if (e.key === ' ' && gameState !== 'playing') {
+                e.preventDefault(); // Prevent scroll
                 startGame();
+            } else if (e.key === ' ' && gameState === 'playing' && gameRef.current.isPlaying) {
+                // Game logic for space if needed (e.g. shoot?)
+                e.preventDefault(); // Prevent scroll during game too
             }
         };
         const handleKeyUp = (e) => {
@@ -74,7 +78,10 @@ const EventGame = () => {
     };
 
     const requestReward = async (finalScore) => {
+        console.log("🎁 requestReward Called! Score:", finalScore);
+
         if (!user) {
+            console.warn("❌ No user logged in");
             setMessage("로그인이 필요합니다.");
             setRewardStatus('error');
             return;
@@ -91,7 +98,9 @@ const EventGame = () => {
         setRewardStatus('claiming');
 
         const token = localStorage.getItem('auth_token');
+        console.log("📤 Sending API Request to claimEventReward...");
         const result = await api.claimEventReward(user.sub, finalScore, token);
+        console.log("📥 API Response:", result);
 
         if (result.success) {
             localStorage.setItem(EVENT_KEY, "true");
@@ -99,6 +108,7 @@ const EventGame = () => {
         } else if (result.result === 'ALREADY_CLAIMED') {
             setRewardStatus('already');
         } else {
+            console.error("❌ Reward Error:", result.message || result.error);
             setMessage(result.message || result.error || "보상 지급 실패");
             setRewardStatus('error');
         }
@@ -235,33 +245,25 @@ const EventGame = () => {
                             `${REWARD_TARGET_SCORE}점 달성 시 ${REWARD_DISPLAY_AMOUNT} Cash 지급! 🎁`}
                 </div>
 
-                {/* Reward Modal */}
-                {rewardStatus && (
-                    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.9)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', zIndex: 20 }}>
-                        {rewardStatus === 'claiming' && <h3>🎁 보상 지급 처리 중...</h3>}
-                        {rewardStatus === 'success' && (
-                            <>
-                                <h3 style={{ color: '#84cc16' }}>🎉 축하합니다!</h3>
-                                <p>{REWARD_DISPLAY_AMOUNT} Cash가 지급되었습니다.</p>
-                                <button onClick={() => setRewardStatus(null)} style={{ marginTop: '1rem', padding: '0.5rem 1rem', background: '#4ade80', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>확인</button>
-                            </>
-                        )}
-                        {rewardStatus === 'already' && (
-                            <>
-                                <h3 style={{ color: '#fbbf24' }}>⚠️ 알림</h3>
-                                <p>이미 보상을 수령하셨습니다.</p>
-                                <button onClick={() => setRewardStatus(null)} style={{ marginTop: '1rem', padding: '0.5rem 1rem', background: '#fbbf24', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>확인</button>
-                            </>
-                        )}
-                        {rewardStatus === 'error' && (
-                            <>
-                                <h3 style={{ color: '#ef4444' }}>❌ 오류</h3>
-                                <p>{message}</p>
-                                <button onClick={() => setRewardStatus(null)} style={{ marginTop: '1rem', padding: '0.5rem 1rem', background: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>닫기</button>
-                            </>
-                        )}
+                {/* Full Screen Game Over Overlay */}
+                {gameState === 'gameOver' && (
+                    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', zIndex: 20 }}>
+                        <h2 style={{ color: '#ef4444', fontSize: '2.5rem', marginBottom: '1rem', fontFamily: 'Netmarble' }}>GAME OVER</h2>
+                        <p style={{ color: '#fff', fontSize: '1.5rem', marginBottom: '2rem' }}>최종 점수: {Math.floor(gameRef.current.scoreVal / 10)}</p>
+
+                        {/* Reward Status Messages inside Game Over Screen */}
+                        {rewardStatus === 'claiming' && <p style={{ color: '#fbbf24' }}>🎁 보상 지급 처리 중...</p>}
+                        {rewardStatus === 'success' && <p style={{ color: '#4ade80', fontWeight: 'bold' }}>🎉 {REWARD_DISPLAY_AMOUNT} Cash 지급 완료!</p>}
+                        {rewardStatus === 'already' && <p style={{ color: '#fbbf24' }}>⚠️ 이미 보상을 받으셨습니다.</p>}
+                        {rewardStatus === 'error' && <p style={{ color: '#ef4444' }}>❌ {message}</p>}
+
+                        <p style={{ color: '#9ca3af', marginTop: '2rem' }}>스페이스바를 눌러 재시작</p>
                     </div>
                 )}
+
+                {/* Reward Success Popup (Separate if needed, but integrated above for simplicity) */}
+                {/* 만약 게임 중 바로 뜨길 원하면 여기에 별도 모달 추가 가능 */}
+
             </div>
             <p style={{ marginTop: '1rem', color: '#6b7280' }}>
                 방향키: 이동 | 스페이스바: 시작

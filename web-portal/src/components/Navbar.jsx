@@ -44,7 +44,6 @@ const Navbar = () => {
                 }}>
                     <NavLink to="/" label="NOTICE" active={isActive('/')} />
                     <NavLink to="/ranking" label="RANKING" icon={<Trophy size={18} />} active={isActive('/ranking')} />
-                    <NavLink to="/event-game" label="GAME" icon={<Gamepad2 size={18} />} active={isActive('/event-game')} />
 
                     {/* MY HOME Mega Menu Trigger */}
                     <div
