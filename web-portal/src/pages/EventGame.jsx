@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../services/api';
 
-const REWARD_TARGET_SCORE = 20; // 20점 이상 시
+const REWARD_TARGET_SCORE = 50; // 백엔드 설정(50점)과 일치시킴
 const REWARD_DISPLAY_AMOUNT = 3; // "3 Cash" 지급 (서버 설정과 일치)
 const EVENT_KEY = "event_reward_202601_claimed";
 
