@@ -284,8 +284,8 @@ export const api = {
     // [New] Event Game Reward
     claimEventReward: async (userId, score, token) => {
         try {
-            // Use the tested URL (ALB Port 8080)
-            const targetUrl = import.meta.env.VITE_API_EVENT_GAME_URL || 'http://main.kguard.click:8080/api/claim-reward';
+            // CloudFront Path Mapping (/api/* -> ALB)
+            const targetUrl = '/api/claim-reward';
 
             const response = await fetch(targetUrl, {
                 method: 'POST',
