@@ -28,5 +28,8 @@ dist-ssr
 # .py
 *.txt
 .sh
-/docker_image
+*.sh
+
+# Docker
 docker_image
+docker_image/*
