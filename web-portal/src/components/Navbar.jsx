@@ -44,6 +44,7 @@ const Navbar = () => {
                 }}>
                     <NavLink to="/" label="NOTICE" active={isActive('/')} />
                     <NavLink to="/ranking" label="RANKING" icon={<Trophy size={18} />} active={isActive('/ranking')} />
+                    <NavLink to="/event-game" label="GAME" icon={<Gamepad2 size={18} />} active={isActive('/event-game')} />
 
                     {/* MY HOME Mega Menu Trigger */}
                     <div
@@ -127,11 +128,11 @@ const Navbar = () => {
                                 icon={<User size={24} color="var(--color-accent-blue)" />}
                             />
 
-                            {/* Menu Item 2: EVENT GAME (주소 수정됨!) */}
+                            {/* Menu Item 2: EVENT GAME (Integrated) */}
                             <MegaMenuItem
-                                to={user ? "/game/event/index.html" : "/login"}
+                                to={user ? "/event-game" : "/login"}
                                 title="EVENT GAME"
-                                desc="Temporary mini-games"
+                                desc="Play & Earn Rewards"
                                 icon={<Gamepad2 size={24} color="var(--color-accent-purple)" />}
                             />
 
