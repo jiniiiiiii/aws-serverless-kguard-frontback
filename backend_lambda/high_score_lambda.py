@@ -84,14 +84,17 @@ def lambda_handler(event, context):
             # ==========================================
             if action == 'get_ranking':
                 target_region = body.get('region') # Optional
+                print(f"[DEBUG] get_ranking called. target_region: {target_region}, body: {body}")
 
                 # DynamoDB Scan
                 response = target_table.scan()
                 items = response.get('Items', [])
+                print(f"[DEBUG] Total items scanned: {len(items)}")
                 
                 # [Filter] 리전 파라미터가 있으면 해당 리전만 필터링
                 if target_region:
                     items = [i for i in items if i.get('region') == target_region]
+                    print(f"[DEBUG] Items after filter ({target_region}): {len(items)}")
 
                 # 점수 기준 내림차순 정렬
                 def get_score(item):

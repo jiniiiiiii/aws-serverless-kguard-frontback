@@ -233,55 +233,78 @@ const EventGame = () => {
     };
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '2rem', color: 'white' }}>
-            <h1 style={{ marginBottom: '1rem', fontFamily: 'Netmarble' }}>이벤트 게임</h1>
-            <div className="game-container" style={{ position: 'relative', border: '4px solid #4ade80', borderRadius: '8px', overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', top: 10, left: 10, color: '#fff', zIndex: 10, fontFamily: 'monospace' }}>
-                    {gameState === 'ready' ? "PRESS SPACE" : `SCORE: ${score}`}
-                </div>
-                <canvas ref={canvasRef} width="400" height="400" style={{ display: 'block', backgroundColor: '#020617' }}></canvas>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', padding: '2rem', minHeight: '100vh', alignItems: 'flex-start' }}>
 
-                {/* Info Text */}
-                <div style={{ position: 'absolute', bottom: 10, width: '100%', textAlign: 'center', color: '#9ca3af', fontSize: '14px' }}>
-                    {gameState === 'playing' ? `목표: ${REWARD_TARGET_SCORE}점을 넘기세요!` :
-                        gameState === 'gameOver' ? 'GAME OVER' :
-                            `${REWARD_TARGET_SCORE}점 달성 시 ${REWARD_DISPLAY_AMOUNT} Cash 지급! 🎁`}
-                </div>
-
-                {/* Full Screen Game Over Overlay */}
-                {gameState === 'gameOver' && (
-                    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', zIndex: 20 }}>
-                        <h2 style={{ color: '#ef4444', fontSize: '2.5rem', marginBottom: '1rem', fontFamily: 'Netmarble' }}>GAME OVER</h2>
-                        <p style={{ color: '#fff', fontSize: '1.5rem', marginBottom: '2rem' }}>최종 점수: {Math.floor(gameRef.current.scoreVal / 10)}</p>
-
-                        {/* Reward Status Messages inside Game Over Screen */}
-                        {rewardStatus === 'claiming' && <p style={{ color: '#fbbf24' }}>🎁 보상 지급 처리 중...</p>}
-                        {rewardStatus === 'success' && <p style={{ color: '#4ade80', fontWeight: 'bold' }}>🎉 {REWARD_DISPLAY_AMOUNT} Cash 지급 완료!</p>}
-                        {rewardStatus === 'already' && <p style={{ color: '#fbbf24' }}>⚠️ 이미 보상을 받으셨습니다.</p>}
-                        {rewardStatus === 'error' && <p style={{ color: '#ef4444' }}>❌ {message}</p>}
-
-                        <p style={{ color: '#9ca3af', marginTop: '2rem' }}>스페이스바를 눌러 재시작</p>
+            {/* Advertising Sidebar (Left) */}
+            <div style={{ width: '160px', flexShrink: 0, marginTop: '5rem' }}>
+                <a
+                    href="https://www.google.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ display: 'block', width: '100%', height: '600px', backgroundColor: '#333', borderRadius: '8px', overflow: 'hidden', textDecoration: 'none', position: 'relative' }}
+                >
+                    {/* Placeholder Image - Users can replace src='/ad_banner.png' */}
+                    <img
+                        src="https://placehold.co/160x600/333/fff?text=Ad+Space"
+                        alt="Advertisement"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                    <div style={{ position: 'absolute', bottom: 5, right: 5, fontSize: '10px', color: '#888', background: 'rgba(0,0,0,0.5)', padding: '2px 4px' }}>
+                        Ad
                     </div>
-                )}
-
-                {/* Reward Success Popup (Separate if needed, but integrated above for simplicity) */}
-                {/* 만약 게임 중 바로 뜨길 원하면 여기에 별도 모달 추가 가능 */}
-
+                </a>
             </div>
 
+            {/* Main Game Area */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white' }}>
+                <h1 style={{ marginBottom: '1rem', fontFamily: 'Netmarble' }}>이벤트 게임</h1>
+                <div className="game-container" style={{ position: 'relative', border: '4px solid #4ade80', borderRadius: '8px', overflow: 'hidden' }}>
+                    <div style={{ position: 'absolute', top: 10, left: 10, color: '#fff', zIndex: 10, fontFamily: 'monospace' }}>
+                        {gameState === 'ready' ? "PRESS SPACE" : `SCORE: ${score}`}
+                    </div>
+                    <canvas ref={canvasRef} width="400" height="400" style={{ display: 'block', backgroundColor: '#020617' }}></canvas>
 
-            {/* DEBUG BUTTON: Only for testing connectivity (Uncomment for demo/video)
-            <button
-                onClick={() => requestReward(999)}
-                style={{ marginTop: '2rem', padding: '0.5rem 1rem', backgroundColor: '#6366f1', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-            >
-                🛠️ DEBUG: 강제 보상 요청 (테스트용)
-            </button>
-            */}
+                    {/* Info Text */}
+                    <div style={{ position: 'absolute', bottom: 10, width: '100%', textAlign: 'center', color: '#9ca3af', fontSize: '14px' }}>
+                        {gameState === 'playing' ? `목표: ${REWARD_TARGET_SCORE}점을 넘기세요!` :
+                            gameState === 'gameOver' ? 'GAME OVER' :
+                                `${REWARD_TARGET_SCORE}점 달성 시 ${REWARD_DISPLAY_AMOUNT} Cash 지급! 🎁`}
+                    </div>
 
-            <p style={{ marginTop: '1rem', color: '#6b7280' }}>
-                방향키: 이동 | 스페이스바: 시작
-            </p>
+                    {/* Full Screen Game Over Overlay */}
+                    {gameState === 'gameOver' && (
+                        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', zIndex: 20 }}>
+                            <h2 style={{ color: '#ef4444', fontSize: '2.5rem', marginBottom: '1rem', fontFamily: 'Netmarble' }}>GAME OVER</h2>
+                            <p style={{ color: '#fff', fontSize: '1.5rem', marginBottom: '2rem' }}>최종 점수: {Math.floor(gameRef.current.scoreVal / 10)}</p>
+
+                            {/* Reward Status Messages inside Game Over Screen */}
+                            {rewardStatus === 'claiming' && <p style={{ color: '#fbbf24' }}>🎁 보상 지급 처리 중...</p>}
+                            {rewardStatus === 'success' && <p style={{ color: '#4ade80', fontWeight: 'bold' }}>🎉 {REWARD_DISPLAY_AMOUNT} Cash 지급 완료!</p>}
+                            {rewardStatus === 'already' && <p style={{ color: '#fbbf24' }}>⚠️ 이미 보상을 받으셨습니다.</p>}
+                            {rewardStatus === 'error' && <p style={{ color: '#ef4444' }}>❌ {message}</p>}
+
+                            <p style={{ color: '#9ca3af', marginTop: '2rem' }}>스페이스바를 눌러 재시작</p>
+                        </div>
+                    )}
+                </div>
+
+                {/* Debug Button (Commented Out) */}
+                {/*
+                <button
+                    onClick={() => requestReward(999)}
+                    style={{ marginTop: '2rem', padding: '0.5rem 1rem', backgroundColor: '#6366f1', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                >
+                    🛠️ DEBUG: 강제 보상 요청 (테스트용)
+                </button>
+                */}
+
+                <p style={{ marginTop: '1rem', color: '#6b7280' }}>
+                    방향키: 이동 | 스페이스바: 시작
+                </p>
+            </div>
+
+            {/* Right Spacer (Optional, to center game perfectly if ad is only on left) */}
+            <div style={{ width: '160px', flexShrink: 0 }}></div>
         </div>
     );
 };
