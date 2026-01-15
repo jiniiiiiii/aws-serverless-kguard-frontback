@@ -12,18 +12,7 @@
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
 
-    <div id="chat-layer" style="
-        position: fixed; 
-        bottom: 20px; 
-        right: 90px; /* 메인 버튼 옆에서 시작 */
-        display: flex; 
-        flex-direction: row-reverse; /* 최신 창이 오른쪽으로 오게 */
-        align-items: flex-end; 
-        gap: 10px; 
-        z-index: 9990;
-        pointer-events: none; /* 빈 공간은 클릭 통과 */
-    ">
-        </div>
+    <div id="chat-layer"></div>
 
     <div style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;">
         <button onclick="openChatWindow('System', '가이드')" style="
@@ -44,31 +33,32 @@
         const SYSTEM_API_URL = "https://sbfu5vljtlmkzdunw6e6cyr4bi0qbacc.lambda-url.ap-northeast-2.on.aws/";
         const CHARACTER_API_URL = "https://wtra2zvnbxxms4vry7zjtchzeu0ztlup.lambda-url.ap-northeast-2.on.aws/";
 
-        // 현재 열려있는 채팅창 목록 관리 (중복 방지)
+        // 현재 열려있는 채팅창 목록 관리
         const activeChats = new Set();
+        // 창이 겹칠 때 순서를 관리하기 위한 변수
+        let globalZIndex = 10000;
+        // 창이 뜰 초기 위치 오프셋
+        let spawnOffset = 0;
 
-        // [공통 함수] 채팅창 열기 (ID: 식별자, Name: 표시 이름)
-        // System은 ID='System', 캐릭터는 ID='캐릭터이름'으로 사용
+        // [공통 함수] 채팅창 열기
         window.openChatWindow = function(id, name) {
-            // 1. 이미 열려있다면? -> 흔들어서 알려주고 끝냄 (새로 안 만듦)
             if (activeChats.has(id)) {
                 const existingBox = document.getElementById(`chat-window-${id}`);
+                // 이미 열려있으면 흔들고 맨 앞으로 가져옴
                 existingBox.classList.add('shake');
+                bringToFront(existingBox);
                 setTimeout(() => existingBox.classList.remove('shake'), 500);
                 return;
             }
 
-            // 2. 새 채팅창 생성
             activeChats.add(id);
             createChatDOM(id, name);
         }
 
-        // [연결 함수] 리액트(MyPage)에서 호출하는 함수
         window.openCharacterChat = function(charName) {
             window.openChatWindow(charName, charName);
         }
         
-        // [연결 함수] 시스템 챗봇 열기 (버튼용)
         window.openSystemChat = function() {
             window.openChatWindow('System', '가이드');
         }
@@ -81,35 +71,117 @@
             const div = document.createElement('div');
             div.id = `chat-window-${id}`;
             div.className = 'chat-window';
-            div.style.pointerEvents = "auto"; // 창 자체는 클릭 가능
+            
+            // 초기 위치 설정 (계단식으로 뜨게 함)
+            const initialTop = 100 + (spawnOffset * 30);
+            const initialLeft = 100 + (spawnOffset * 30);
+            spawnOffset = (spawnOffset + 1) % 10; // 너무 멀리 안 가게 리셋
 
-            // 헤더 색상 다르게 (시스템: 파랑, 캐릭터: 노랑/주황 느낌)
+            div.style.top = `${initialTop}px`;
+            div.style.left = `${initialLeft}px`;
+            div.style.zIndex = ++globalZIndex;
+
+            // 창 클릭 시 맨 앞으로
+            div.onmousedown = function() { bringToFront(div); };
+
             const headerColor = isSystem ? '#00ccff' : '#ffcc00';
             const headerBg = isSystem ? '#001122' : '#221100';
             const titlePrefix = isSystem ? '🔵 K-Guard' : '💬';
 
             div.innerHTML = `
-                <div class="chat-header" style="background: ${headerBg}; border-bottom: 1px solid ${headerColor}; color: ${headerColor};">
-                    <span>${titlePrefix} ${name}</span>
-                    <span class="close-btn" onclick="closeChat('${id}')">×</span>
-                </div>
-                <div class="chat-logs" id="logs-${id}">
-                    <div class="system-msg" style="border-color: ${headerColor}; color: ${headerColor};">
-                        ${isSystem ? '시스템 가이드봇입니다.<br>무엇을 도와드릴까요?' : name + '님과 연결되었습니다.<br>대화를 시작해보세요!'}
+                <div class="chat-header" id="header-${id}" style="background: ${headerBg}; border-bottom: 1px solid ${headerColor}; color: ${headerColor};">
+                    <span style="pointer-events: none;">${titlePrefix} ${name}</span>
+                    <div class="window-controls">
+                        <span class="control-btn" onclick="toggleMinimize('${id}', event)">─</span>
+                        <span class="control-btn" onclick="closeChat('${id}')">×</span>
                     </div>
                 </div>
-                <div class="chat-input-area" style="border-top: 1px solid ${headerColor};">
-                    <input type="text" id="input-${id}" placeholder="메시지 입력..." 
-                           onkeypress="if(event.keyCode==13) sendMessage('${id}', '${name}', ${isSystem})">
-                    <button onclick="sendMessage('${id}', '${name}', ${isSystem})" style="color:${headerColor}; border-color:${headerColor};">전송</button>
+                
+                <div class="window-content" id="content-${id}">
+                    <div class="chat-logs" id="logs-${id}">
+                        <div class="system-msg" style="border-color: ${headerColor}; color: ${headerColor};">
+                            ${isSystem ? '시스템 가이드봇입니다.<br>무엇을 도와드릴까요?' : name + '님과 연결되었습니다.<br>대화를 시작해보세요!'}
+                        </div>
+                    </div>
+                    <div class="chat-input-area" style="border-top: 1px solid ${headerColor};">
+                        <input type="text" id="input-${id}" placeholder="메시지 입력..." 
+                               onkeypress="if(event.keyCode==13) sendMessage('${id}', '${name}', ${isSystem})">
+                        <button onclick="sendMessage('${id}', '${name}', ${isSystem})" style="color:${headerColor}; border-color:${headerColor};">전송</button>
+                    </div>
                 </div>
             `;
             
-            // 레이어에 추가 (화면에 표시됨)
             layer.appendChild(div);
+            
+            // 드래그 기능 적용 (헤더를 잡고 이동)
+            dragElement(div);
         }
 
-        // 채팅창 닫기
+        // [기능] 최소화 토글
+        window.toggleMinimize = function(id, event) {
+            // 버블링 방지 (드래그 시작 안되게)
+            if(event) event.stopPropagation(); 
+            
+            const content = document.getElementById(`content-${id}`);
+            const windowBox = document.getElementById(`chat-window-${id}`);
+            
+            if (content.style.display === "none") {
+                // 복구
+                content.style.display = "flex";
+                windowBox.style.height = "450px";
+            } else {
+                // 최소화
+                content.style.display = "none";
+                windowBox.style.height = "auto"; // 헤더 높이만큼만 남음
+            }
+        }
+
+        // [기능] 맨 앞으로 가져오기
+        function bringToFront(element) {
+            element.style.zIndex = ++globalZIndex;
+        }
+
+        // [기능] 드래그 앤 드롭 로직
+        function dragElement(elmnt) {
+            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+            const header = elmnt.querySelector(".chat-header");
+            
+            if (header) {
+                header.onmousedown = dragMouseDown;
+            }
+
+            function dragMouseDown(e) {
+                // 버튼 클릭 시에는 드래그 안되게
+                if(e.target.classList.contains('control-btn')) return;
+
+                e.preventDefault();
+                // 마우스 시작 위치
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                document.onmouseup = closeDragElement;
+                document.onmousemove = elementDrag;
+                bringToFront(elmnt); // 드래그 시작 시 맨 앞으로
+            }
+
+            function elementDrag(e) {
+                e.preventDefault();
+                // 이동 거리 계산
+                pos1 = pos3 - e.clientX;
+                pos2 = pos4 - e.clientY;
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                // 새 위치 적용
+                elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+                elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+            }
+
+            function closeDragElement() {
+                // 드래그 종료
+                document.onmouseup = null;
+                document.onmousemove = null;
+            }
+        }
+
         window.closeChat = function(id) {
             const box = document.getElementById(`chat-window-${id}`);
             if (box) {
@@ -118,7 +190,6 @@
             }
         }
 
-        // 메시지 전송 (각 창마다 독립적으로 동작)
         window.sendMessage = async function(id, name, isSystem) {
             const input = document.getElementById(`input-${id}`);
             const logs = document.getElementById(`logs-${id}`);
@@ -126,25 +197,18 @@
 
             if (!msg.trim()) return;
 
-            // 1. 내 말풍선 추가
             appendLog(logs, msg, 'user');
             input.value = '';
 
-            // 2. 로딩 표시
             const loadingId = `loading-${id}-${Date.now()}`;
             logs.innerHTML += `<div id="${loadingId}" class="msg-row bot"><div class="msg-bubble bot-bubble" style="color:#aaa;">👀 생각 중...</div></div>`;
             logs.scrollTop = logs.scrollHeight;
 
-            // 3. API 주소 결정
             const targetUrl = isSystem ? SYSTEM_API_URL : CHARACTER_API_URL;
-            
-            // 4. 유저 정보 가져오기
             const storedUser = localStorage.getItem('kguard_user_id') || "guest";
-
-            // ★ [수정] 한글 이름(대윤, 영훈)을 AWS가 좋아하는 안전한 문자(영어/숫자)로 변환
-            // 예: "대윤" -> "_EB_8C_80_EC_9C_A4" 로 바뀝니다.
             const safeId = encodeURIComponent(id).replace(/%/g, '_');
             const sessionKey = (localStorage.getItem('kguard_session_key') || "sess") + "-" + safeId;   
+            
             try {
                 const res = await fetch(targetUrl, {
                     method: 'POST',
@@ -153,14 +217,12 @@
                         message: msg,
                         user_id: storedUser,
                         session_id: sessionKey,
-                        character: isSystem ? "System" : name // 캐릭터 이름 전달
+                        character: isSystem ? "System" : name
                     })
                 });
 
                 const data = await res.json();
                 document.getElementById(loadingId).remove();
-
-                // 5. 답변 표시 (줄바꿈 처리)
                 const replyText = data.reply ? data.reply.replace(/\n/g, '<br>') : "응답이 없습니다.";
                 appendLog(logs, replyText, 'bot');
 
@@ -171,7 +233,6 @@
             }
         }
 
-        // 로그 추가 헬퍼 함수
         function appendLog(container, text, type) {
             container.innerHTML += `
                 <div class="msg-row ${type}">
@@ -181,13 +242,14 @@
             container.scrollTop = container.scrollHeight;
         }
 
-        // ▼▼▼ 스타일 (멀티 윈도우 지원) ▼▼▼
+        // ▼▼▼ 스타일 (드래그 & 최소화 지원) ▼▼▼
         const style = document.createElement('style');
         style.innerHTML = `
             @font-face { font-family: 'Netmarble'; src: url('/fonts/netmarble_Bold.ttf') format('truetype'); }
             
-            /* 개별 채팅창 디자인 */
+            /* 채팅창 기본: 고정 위치(fixed)지만 좌표는 JS로 제어 */
             .chat-window {
+                position: fixed; 
                 width: 320px;
                 height: 450px;
                 background: rgba(0, 10, 30, 0.95);
@@ -195,20 +257,34 @@
                 border-radius: 10px;
                 display: flex;
                 flex-direction: column;
-                box-shadow: 0 0 20px rgba(0,0,0,0.5);
+                box-shadow: 0 10px 25px rgba(0,0,0,0.8); /* 그림자 강화 */
                 font-family: 'Netmarble', sans-serif;
-                animation: slideUp 0.3s ease-out;
                 overflow: hidden;
+                /* 부드러운 등장 */
+                animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
             }
 
+            /* 헤더: 드래그 핸들 역할 */
             .chat-header {
                 padding: 10px 15px;
                 font-weight: bold;
                 display: flex; justify-content: space-between; align-items: center;
-                cursor: default;
+                cursor: grab; /* 손바닥 커서 */
+                user-select: none; /* 드래그 중 텍스트 선택 방지 */
             }
-            .close-btn { cursor: pointer; font-size: 20px; font-weight: bold; }
-            .close-btn:hover { color: white; opacity: 0.8; }
+            .chat-header:active { cursor: grabbing; }
+
+            .window-controls { display: flex; gap: 10px; }
+            .control-btn { cursor: pointer; font-size: 18px; font-weight: bold; line-height: 1; }
+            .control-btn:hover { color: white; }
+
+            /* 최소화 시 내용 숨기기 및 복구 */
+            .window-content {
+                display: flex;
+                flex-direction: column;
+                flex: 1;
+                overflow: hidden;
+            }
 
             .chat-logs { 
                 flex: 1; 
@@ -231,8 +307,7 @@
                 margin-left: 8px; background: #002244; padding: 0 15px; border: 1px solid; border-radius: 5px; cursor: pointer; font-weight: bold;
             }
 
-            /* 말풍선 공통 */
-            .msg-row { display: flex; width: 100%; opacity: 0; animation: popIn 0.3s forwards; }
+            .msg-row { display: flex; width: 100%; }
             .msg-row.user { justify-content: flex-end; }
             .msg-row.bot { justify-content: flex-start; }
             
@@ -242,8 +317,7 @@
             
             .system-msg { align-self: center; background: rgba(255,255,255,0.05); border: 1px dashed; padding: 10px; border-radius: 10px; font-size: 12px; text-align: center; width: 90%; }
 
-            @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-            @keyframes popIn { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+            @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
             @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
             .shake { animation: shake 0.3s; }
 
