@@ -23,4 +23,10 @@
     "isAcquired": false,
     "img": "/characters/기린.jpg"
   }
+    {
+    "id": "Char4",
+    "name": "현진",
+    "isAcquired": false,
+    "img": "/characters/새.jpg"
+  }
 ]
