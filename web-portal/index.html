@@ -140,8 +140,11 @@
             
             // 4. 유저 정보 가져오기
             const storedUser = localStorage.getItem('kguard_user_id') || "guest";
-            const sessionKey = (localStorage.getItem('kguard_session_key') || "sess") + "-" + id; // ★ 세션 분리 (중요)
 
+            // ★ [수정] 한글 이름(대윤, 영훈)을 AWS가 좋아하는 안전한 문자(영어/숫자)로 변환
+            // 예: "대윤" -> "_EB_8C_80_EC_9C_A4" 로 바뀝니다.
+            const safeId = encodeURIComponent(id).replace(/%/g, '_');
+            const sessionKey = (localStorage.getItem('kguard_session_key') || "sess") + "-" + safeId;   
             try {
                 const res = await fetch(targetUrl, {
                     method: 'POST',
