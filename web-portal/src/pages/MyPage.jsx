@@ -192,9 +192,10 @@ const MyPage = () => {
 
     {/* ▼▼▼ [추가] 채팅 버튼 시작 ▼▼▼ */}
 {/* ▼▼▼ [수정됨] 4배 커진 대왕 채팅 버튼 ▼▼▼ */}
+    {/* ▼▼▼ [수정됨] 적당히 크고 예쁜 비율로 조절 ▼▼▼ */}
     {char.isUnlocked && (
         <div style={{ 
-            marginTop: '1rem', 
+            marginTop: '0.8rem', 
             display: 'flex', 
             justifyContent: 'center', 
             width: '100%' 
@@ -202,40 +203,41 @@ const MyPage = () => {
             <button 
                 onClick={() => window.openCharacterChat(char.name)}
                 style={{ 
-                    background: 'rgba(255, 255, 255, 0.15)', 
-                    border: '2px solid rgba(255, 255, 255, 0.3)', 
+                    background: 'rgba(255, 255, 255, 0.1)', 
+                    border: '1px solid rgba(255, 255, 255, 0.2)', /* 테두리 두께도 살짝 줄임 */
                     borderRadius: '50%', 
                     
-                    /* ★ 여기가 핵심! 버튼 크기를 100px로 키웠습니다 (기존 50px) */
-                    width: '100px',
-                    height: '100px',
+                    /* ★ 크기 수정: 100px -> 60px (카드에 딱 어울리는 크기) */
+                    width: '60px',
+                    height: '60px',
                     
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     cursor: 'pointer',
                     transition: 'all 0.2s',
-                    boxShadow: '0 8px 15px rgba(0,0,0,0.3)' /* 그림자도 좀 더 진하게 */
+                    boxShadow: '0 4px 10px rgba(0,0,0,0.3)' 
                 }}
                 onMouseOver={(e) => {
                     e.currentTarget.style.transform = 'scale(1.1)';
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
                 }}
                 onMouseOut={(e) => {
                     e.currentTarget.style.transform = 'scale(1)';
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
                 }}
             >
-                {/* ★ 이미지 크기도 60px로 키웠습니다 (기존 28px) */}
+                {/* ★ 아이콘 크기 수정: 60px -> 30px (버튼 안에 쏙 들어가는 크기) */ }
                 <img 
                     src="/chat-icon1.png" 
                     alt="대화하기" 
-                    style={{ width: '60px', height: '60px' }} 
+                    style={{ width: '40px', height: '40px' }} 
                 />
             </button>
         </div>
     )}
     {/* ▲▲▲ [수정 끝] ▲▲▲ */}
+   
 
     {!char.isUnlocked && (
         <p style={{ fontSize: '0.8rem', color: 'var(--color-danger)', margin: 0 }}>
