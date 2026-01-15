@@ -36,8 +36,8 @@
         const activeChats = new Set();
         let globalZIndex = 10000;
         
-        // 창이 겹치지 않게 약간씩 어긋나게 띄우기 위한 오프셋 변수
-        let spawnOffset = 0;
+        // 창이 뜨는 순서를 기억하기 위한 변수
+        let spawnCounter = 0; 
 
         window.openChatWindow = function(id, name) {
             if (activeChats.has(id)) {
@@ -68,27 +68,39 @@
             div.id = `chat-window-${id}`;
             div.className = 'chat-window';
             
-            // ★★★ 위치 계산 로직 수정 (핵심) ★★★
-            // 화면 오른쪽 아래(버튼 옆)를 기준으로 좌표를 계산합니다.
+            // ★★★ 위치 계산 로직 (핵심 변경) ★★★
+            // 창 크기 설정
             const boxWidth = 320;
             const boxHeight = 450;
-            const marginBottom = 20; // 바닥 여백
-            const marginRight = 100; // 오른쪽 여백 (버튼 공간 확보)
-            
-            // 오프셋: 여러 창 띄울 때 왼쪽 위로 조금씩 이동시킴
-            const offsetStep = 30; 
-            const currentOffset = (spawnOffset % 5) * offsetStep; 
-            spawnOffset++; 
+            const gap = 20; // 창 사이 간격
+            const rightMargin = 110; // 메인 버튼 자리 확보
+            const bottomMargin = 20;
 
-            // 좌표 계산: (화면크기) - (창크기) - (여백) - (오프셋)
-            const initTop = window.innerHeight - boxHeight - marginBottom - currentOffset;
-            const initLeft = window.innerWidth - boxWidth - marginRight - currentOffset;
+            // 현재 화면 너비
+            const screenWidth = window.innerWidth;
+            
+            // 몇 번째로 뜨는 창인지 계산 (현재 열린 창 개수 기준 아님, 누적 카운터 사용)
+            // 화면을 넘어가면 다시 처음 위치로 돌아오되, 위로 조금 쌓음(row)
+            const maxCols = Math.floor((screenWidth - rightMargin) / (boxWidth + gap));
+            const colIndex = spawnCounter % maxCols; // 가로 위치
+            const rowIndex = Math.floor(spawnCounter / maxCols); // 세로 위치 (화면 꽉 차면 위로)
+
+            // 오른쪽에서부터 왼쪽으로 배치 (메인 버튼 옆 -> 그 왼쪽 -> 그 왼쪽)
+            // rightOffset: 오른쪽 끝에서 얼마나 떨어져야 하는가?
+            const rightOffset = rightMargin + (colIndex * (boxWidth + gap));
+            
+            // 실제 left 좌표 계산 (CSS left로 제어하기 위해)
+            const initLeft = screenWidth - rightOffset - boxWidth;
+            
+            // 아래쪽 여백 + (화면 꽉 차서 다음 줄로 갈 때 위로 쌓임)
+            const initTop = window.innerHeight - boxHeight - bottomMargin - (rowIndex * 50);
+
+            spawnCounter++; // 다음 창을 위해 카운터 증가
 
             div.style.top = `${initTop}px`;
             div.style.left = `${initLeft}px`;
             div.style.zIndex = ++globalZIndex;
 
-            // 창 클릭 시 맨 앞으로
             div.onmousedown = function() { bringToFront(div); };
 
             const headerColor = isSystem ? '#00ccff' : '#ffcc00';
@@ -119,10 +131,9 @@
             `;
             
             layer.appendChild(div);
-            dragElement(div); // 드래그 기능 적용
+            dragElement(div);
         }
 
-        // [기능] 최소화 토글
         window.toggleMinimize = function(id, event) {
             if(event) event.stopPropagation(); 
             const content = document.getElementById(`content-${id}`);
@@ -141,7 +152,6 @@
             element.style.zIndex = ++globalZIndex;
         }
 
-        // [기능] 드래그 앤 드롭
         function dragElement(elmnt) {
             let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
             const header = elmnt.querySelector(".chat-header");
@@ -181,6 +191,8 @@
             if (box) {
                 box.remove();
                 activeChats.delete(id);
+                // 닫았을 때 스폰 위치를 리셋하고 싶으면 아래 주석 해제 (지금은 계속 쌓이는 방식)
+                // spawnCounter--; 
             }
         }
 
@@ -253,7 +265,8 @@
                 box-shadow: 0 10px 25px rgba(0,0,0,0.8);
                 font-family: 'Netmarble', sans-serif;
                 overflow: hidden;
-                animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+                animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+                transition: height 0.3s ease; /* 최소화 시 부드럽게 */
             }
 
             .chat-header {
