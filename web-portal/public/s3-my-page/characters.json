@@ -27,6 +27,8 @@
     "id": "Char4",
     "name": "현진",
     "isAcquired": false,
-    "img": "/characters/새.jpg"
+    "img": "/characters/새.jpg",
+    "unlockThreshold": 30,
+    "requiredCharacter": "영훈"
   }
 ]
