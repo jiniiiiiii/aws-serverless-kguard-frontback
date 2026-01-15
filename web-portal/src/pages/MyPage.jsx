@@ -204,8 +204,8 @@ const MyPage = () => {
                 alt="대화하기" 
                 onClick={() => window.openCharacterChat(char.name)}
                 style={{ 
-                    width: '45px',    /* 아이콘 크기 (적당하게 조절됨) */
-                    height: '45px',
+                    width: '70px',    /* 아이콘 크기 (적당하게 조절됨) */
+                    height: '70px',
                     cursor: 'pointer',
                     transition: 'transform 0.2s ease-in-out',
                     filter: 'drop-shadow(0 0 8px rgba(0, 150, 255, 0.4))' /* 아이콘 뒤에 은은한 푸른 광택 */
