@@ -211,7 +211,7 @@ const MyPage = () => {
                 <img 
                     src="/chat-icon1.png" 
                     alt="대화하기" 
-                    style={{ width: '35px', height: '35px', filter: 'drop-shadow(0 0 5px rgba(0,200,255,0.5))' }} 
+                    style={{ width: '70px', height: '70px', filter: 'drop-shadow(0 0 5px rgba(0,200,255,0.5))' }} 
                 />
             </button>
         </div>
