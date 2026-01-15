@@ -209,7 +209,7 @@ const MyPage = () => {
                    (아까 보여주신 파란 말풍선 사진입니다)
                 */}
                 <img 
-                    src="/chat-icon.png" 
+                    src="/chat-icon1.png" 
                     alt="대화하기" 
                     style={{ width: '35px', height: '35px', filter: 'drop-shadow(0 0 5px rgba(0,200,255,0.5))' }} 
                 />
