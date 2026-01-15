@@ -192,7 +192,7 @@ const MyPage = () => {
 
     {/* ▼▼▼ [추가] 채팅 버튼 시작 ▼▼▼ */}
     {char.isUnlocked && (
-        <div style={{ marginTop: '0.5rem', display: 'flex', justifyContent: 'flex-end' }}>
+        <div style={{ marginTop: '0.5rem', display: 'flex', justifyContent: 'center' }}>
             <button 
                 onClick={() => window.openCharacterChat(char.name)}
                 style={{ 
