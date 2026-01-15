@@ -191,49 +191,33 @@ const MyPage = () => {
     </h4>
 
     {/* ▼▼▼ [추가] 채팅 버튼 시작 ▼▼▼ */}
-{/* ▼▼▼ [수정됨] 4배 커진 대왕 채팅 버튼 ▼▼▼ */}
-    {/* ▼▼▼ [수정됨] 적당히 크고 예쁜 비율로 조절 ▼▼▼ */}
+{/* ▼▼▼ [수정됨] 테두리/배경 없는 깔끔한 아이콘 모드 ▼▼▼ */}
     {char.isUnlocked && (
         <div style={{ 
-            marginTop: '0.8rem', 
+            marginTop: '0.5rem', 
             display: 'flex', 
             justifyContent: 'center', 
             width: '100%' 
         }}>
-            <button 
+            <img 
+                src="/chat-icon1.png" 
+                alt="대화하기" 
                 onClick={() => window.openCharacterChat(char.name)}
                 style={{ 
-                    background: 'rgba(255, 255, 255, 0.1)', 
-                    border: '1px solid rgba(255, 255, 255, 0.2)', /* 테두리 두께도 살짝 줄임 */
-                    borderRadius: '50%', 
-                    
-                    /* ★ 크기 수정: 100px -> 60px (카드에 딱 어울리는 크기) */
-                    width: '60px',
-                    height: '60px',
-                    
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                    width: '45px',    /* 아이콘 크기 (적당하게 조절됨) */
+                    height: '45px',
                     cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    boxShadow: '0 4px 10px rgba(0,0,0,0.3)' 
+                    transition: 'transform 0.2s ease-in-out',
+                    filter: 'drop-shadow(0 0 8px rgba(0, 150, 255, 0.4))' /* 아이콘 뒤에 은은한 푸른 광택 */
                 }}
+                /* 마우스 올리면 살짝 커지는 효과 */
                 onMouseOver={(e) => {
-                    e.currentTarget.style.transform = 'scale(1.1)';
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+                    e.currentTarget.style.transform = 'scale(1.15)';
                 }}
                 onMouseOut={(e) => {
                     e.currentTarget.style.transform = 'scale(1)';
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
                 }}
-            >
-                {/* ★ 아이콘 크기 수정: 60px -> 30px (버튼 안에 쏙 들어가는 크기) */ }
-                <img 
-                    src="/chat-icon1.png" 
-                    alt="대화하기" 
-                    style={{ width: '40px', height: '40px' }} 
-                />
-            </button>
+            />
         </div>
     )}
     {/* ▲▲▲ [수정 끝] ▲▲▲ */}
