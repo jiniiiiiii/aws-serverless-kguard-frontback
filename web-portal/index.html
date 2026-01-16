@@ -229,6 +229,10 @@
 
                 const data = await res.json();
                 document.getElementById(loadingId).remove();
+                if (data.newly_unlocked) {
+                    alert("🎉 히든 캐릭터 '현진'이 해금되었습니다!");
+                    location.reload(); // 페이지 새로고침!
+                }
                 const replyText = data.reply ? data.reply.replace(/\n/g, '<br>') : "응답이 없습니다.";
                 appendLog(logs, replyText, 'bot');
 
