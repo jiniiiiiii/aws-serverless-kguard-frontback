@@ -21,7 +21,7 @@ const MyPage = () => {
             try {
                 const token = localStorage.getItem('auth_token');
                 const userId = user.email || user.id || localStorage.getItem('kguard_user_id');
-                const API_URL = "https://sbfu5vljtlmkzdunw6e6cyr4bi0qbacc.lambda-url.ap-northeast-2.on.aws/";
+                const API_URL = "https://wtra2zvnbxxms4vry7zjtchzeu0ztlup.lambda-url.ap-northeast-2.on.aws/";
 
                 // 1. [병렬 요청] 기본 캐릭터 정보(로컬) + 내 해금 정보(람다) 동시에 요청
                 const [charsData, lambdaRes] = await Promise.all([
