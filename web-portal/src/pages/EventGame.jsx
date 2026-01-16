@@ -238,12 +238,12 @@ const EventGame = () => {
             {/* Advertising Sidebar (Left) */}
             <div style={{ width: '160px', flexShrink: 0, marginTop: '5rem' }}>
                 <a
-                    href="https://www.google.com"
+                    href="https://www.megazone.com/"
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{ display: 'block', width: '100%', height: '600px', backgroundColor: '#333', borderRadius: '8px', overflow: 'hidden', textDecoration: 'none', position: 'relative' }}
                 >
-                    {/* Placeholder Image - Users can replace src='/ad_banner.png' */}
+                    {/* 광고 이미지 - Users can replace src='/ad_banner.png' */}
                     <img
                         src="https://placehold.co/160x600/333/fff?text=Ad+Space"
                         alt="Advertisement"
