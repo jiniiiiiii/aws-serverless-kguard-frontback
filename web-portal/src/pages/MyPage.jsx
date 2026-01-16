@@ -15,75 +15,32 @@ const MyPage = () => {
     const [characters, setCharacters] = useState([]);
     const [loading, setLoading] = useState(true);
 
-// ★★★ [수정됨] 페이지 로드 시 최신 해금 정보 가져오기 ★★★
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                // 1. 토큰 및 기본 캐릭터 정보 가져오기 (기존 유지)
-                const token = localStorage.getItem('auth_token');
-                const charsData = await api.getUserCharacters(token);
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const token = localStorage.getItem('auth_token');
+                const [statsData, charsData] = await Promise.all([
+                    api.getUserStats(token),
+                    api.getUserCharacters(token)
+                ]);
 
-                // 2. [핵심] 캐릭터 봇 람다 주소로 직접 요청 (여기가 중요!)
-                // (기존 api.getUserStats 대신 직접 호출)
-                // ★ 아래 주소가 '캐릭터 봇(파이썬 코드 배포한 곳)' 주소여야 합니다.
-                const API_URL = "https://wtra2zvnbxxms4vry7zjtchzeu0ztlup.lambda-url.ap-northeast-2.on.aws/"; 
-                const userId = user.email || user.id || localStorage.getItem('kguard_user_id');
+                const unlockedList = statsData.unlocked_characters || ["Char0"];
 
-                let myStats = {};
-                
-                try {
-                    const res = await fetch(API_URL, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            action: "get_info", // ★ Lambda의 조회 기능 호출
-                            user_id: userId
-                        })
-                    });
-                    myStats = await res.json();
-                    
-                    // 만약 엉뚱한 채팅 응답이 왔으면 무시하기 위한 안전장치
-                    if (!myStats.unlocked_characters && myStats.reply) {
-                         throw new Error("채팅 응답이 왔음");
-                    }
+                const mergedCharacters = charsData.map(char => ({
+                    ...char,
+                    isUnlocked: unlockedList.includes(char.id) || char.id === "Char0"
+                }));
 
-                } catch (e) {
-                    console.error("Lambda 데이터 조회 실패:", e);
-                    // 실패 시 기존 방식으로 백업 (하지만 기존 방식도 안 되면 0으로 뜸)
-                    try { myStats = await api.getUserStats(token); } catch {}
-                }
-
-                // 3. 해금 목록 적용
-                const unlockedList = myStats.unlocked_characters || ["Char0"];
-
-                // 4. 캐릭터 데이터에 'isUnlocked' 상태 병합
-                const mergedCharacters = charsData.map(char => ({
-                    ...char,
-                    isUnlocked: unlockedList.includes(char.id) || char.id === "Char0"
-                }));
-
-                // 5. 상태 업데이트
-                setStats({
-                    ...myStats,
-                    accountCreatedAt: myStats.accountCreatedAt || new Date().toISOString(),
-                    gold: myStats.gold || 0,
-                    cash: myStats.cash || 0,
-                    highScore: myStats.high_score || myStats.highScore || 0,
-                    region: myStats.region || "KR"
-                });
-                setCharacters(mergedCharacters);
-
-            } catch (error) {
-                console.error("데이터 로딩 실패:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        
-        if (user) {
-            fetchData();
-        }
-    }, [user]);
+                setStats(statsData);
+                setCharacters(mergedCharacters);
+            } catch (error) {
+                console.error(error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, []);
 
     // ▼▼▼ [추가된 함수] 로그아웃 시 챗봇 데이터 초기화 ▼▼▼
     const handleLogout = () => {
