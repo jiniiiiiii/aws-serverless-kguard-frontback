@@ -45,6 +45,8 @@ export const api = {
             const response = await fetch(`/notices/list/page_${page}.json`);
             if (!response.ok) throw new Error('Failed to fetch notice list');
             const data = await response.json();
+            // Sort by ID descending
+            data.sort((a, b) => b.id - a.id);
             await delay(300);
             return data;
         } catch (error) {
