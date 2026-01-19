@@ -1,0 +1,60 @@
+{
+    "widgets": [
+        {
+            "type": "metric",
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    [
+                        "AWS/Lambda",
+                        "ConcurrentExecutions",
+                        "FunctionName",
+                        "YOUR_FUNCTION_NAME"
+                    ],
+                    [
+                        ".",
+                        "Throttles",
+                        ".",
+                        "."
+                    ]
+                ],
+                "period": 60,
+                "stat": "Sum",
+                "region": "ap-northeast-2",
+                "title": "Lambda Concurrency vs Throttles"
+            }
+        },
+        {
+            "type": "metric",
+            "x": 12,
+            "y": 0,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    [
+                        "AWS/Lambda",
+                        "Duration",
+                        "FunctionName",
+                        "YOUR_FUNCTION_NAME",
+                        {
+                            "stat": "Average"
+                        }
+                    ],
+                    [
+                        "...",
+                        {
+                            "stat": "p99"
+                        }
+                    ]
+                ],
+                "period": 60,
+                "region": "ap-northeast-2",
+                "title": "Lambda Latency (Avg & P99)"
+            }
+        }
+    ]
+}

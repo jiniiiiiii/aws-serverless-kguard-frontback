@@ -1,0 +1,28 @@
+config:
+  target: "https://api.example.com"
+  phases:
+    - name: warm-up
+      duration: 60
+      arrivalRate: 20
+
+    - name: ramp-1
+      duration: 60
+      arrivalRate: 100
+
+    - name: ramp-2
+      duration: 60
+      arrivalRate: 300
+
+    - name: ramp-3
+      duration: 60
+      arrivalRate: 600
+
+  defaults:
+    headers:
+      Content-Type: application/json
+
+scenarios:
+  - name: lambda-concurrency-hit
+    flow:
+      - get:
+          url: "/loadtest/lambda"
