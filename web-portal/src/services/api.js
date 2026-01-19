@@ -11,8 +11,8 @@ const API_MONTHLY_RANKING_URL = import.meta.env.VITE_API_MONTHLY_RANKING_URL || 
 // [Remote] 로그 수집용 람다 API 주소
 const LOG_API_URL = "https://0v71llt3ta.execute-api.ap-northeast-2.amazonaws.com/default/KG-log-lambda-ap-ne-2";
 
-// [Local] Minigame Backend URL
-const MINIGAME_URL = "http://localhost:3001";
+// [Remote + Local Fallback] Minigame Backend URL
+const MINIGAME_URL = import.meta.env.VITE_API_MINIGAME_URL;
 
 // Helper to simulate network request
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -317,7 +317,7 @@ export const api = {
     // [New] Minigame Ranking System
     submitMinigameScore: async (userId, nickname, score) => {
         try {
-            const response = await fetch(`${MINIGAME_URL}/score`, {
+            const response = await fetch(`${MINIGAME_URL}/minigame/score`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId, nickname, score })
@@ -331,7 +331,7 @@ export const api = {
 
     getMinigameRanking: async () => {
         try {
-            const response = await fetch(`${MINIGAME_URL}/ranking`);
+            const response = await fetch(`${MINIGAME_URL}/minigame/ranking`);
             if (!response.ok) throw new Error("Backend connection failed");
             return await response.json();
         } catch (error) {

@@ -20,13 +20,16 @@ app.use(express.json());
 const TABLE_NAME = process.env.DYNAMODB_TABLE_NAME;
 
 
-// Health Check
+// Health Check (Root)
 app.get('/', (req, res) => {
     res.send('Mini Game Backend is running!');
 });
 
-// 1. Submit Score (POST /score)
-app.post('/score', async (req, res) => {
+// Create Router for /minigame path
+const router = express.Router();
+
+// 1. Submit Score (POST /minigame/score)
+router.post('/score', async (req, res) => {
     const { userId, nickname, score } = req.body;
 
     if (!userId || !nickname || score === undefined) {
@@ -77,8 +80,8 @@ app.post('/score', async (req, res) => {
     }
 });
 
-// 2. Get Ranking (GET /ranking)
-app.get('/ranking', async (req, res) => {
+// 2. Get Ranking (GET /minigame/ranking)
+router.get('/ranking', async (req, res) => {
     try {
         // Query GSI: TopScoreIndex (PK: game, SK: BestScore)
         // Since 'game' is a reserved keyword in DynamoDB, we MUST use ExpressionAttributeNames.
@@ -111,6 +114,9 @@ app.get('/ranking', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
+// Mount the router
+app.use('/minigame', router);
 
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
