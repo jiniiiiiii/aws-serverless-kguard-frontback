@@ -25,7 +25,7 @@ const Login = () => {
     try {
       // 1. 로그인 시도
       const success = await login(email, password);
-      
+
       if (success) {
         // ▼▼▼ [챗봇 연동] 로그인 성공 시 아이디와 세션키 저장 ▼▼▼
         localStorage.setItem('kguard_user_id', email);
@@ -79,6 +79,7 @@ const Login = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 style={{
                   width: '100%',
+                  boxSizing: 'border-box', // Prevent overflow with padding
                   padding: '1rem 1rem 1rem 3rem',
                   background: 'rgba(0,0,0,0.3)',
                   border: '1px solid var(--glass-border)',
@@ -101,6 +102,7 @@ const Login = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 style={{
                   width: '100%',
+                  boxSizing: 'border-box', // Prevent overflow with padding
                   padding: '1rem 1rem 1rem 3rem',
                   background: 'rgba(0,0,0,0.3)',
                   border: '1px solid var(--glass-border)',
