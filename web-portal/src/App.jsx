@@ -53,14 +53,7 @@ const AppContent = () => {
               </RequireAuth>
             }
           />
-          <Route
-            path="/event-game"
-            element={
-              <RequireAuth>
-                <EventGame />
-              </RequireAuth>
-            }
-          />
+          <Route path="/event-game" element={<EventGame />} />
           {/* Catch-all for 404s - Redirect to Home */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

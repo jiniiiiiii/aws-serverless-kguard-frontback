@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../services/api';
+import { getOrInitGuestUser } from '../utils/nicknameGenerator';
 
 const REWARD_TARGET_SCORE = 50; // 백엔드 설정(50점)과 일치시킴
 const REWARD_DISPLAY_AMOUNT = 3; // "3 Cash" 지급 (서버 설정과 일치)
@@ -14,6 +15,24 @@ const EventGame = () => {
     const [score, setScore] = useState(0);
     const [message, setMessage] = useState('');
     const [rewardStatus, setRewardStatus] = useState(null); // null, claiming, success, already, error
+    const [myNickname, setMyNickname] = useState('');
+
+    // Mock Ranking Data
+    const [rankingList, setRankingList] = useState([
+        { rank: 1, nickname: '날쎈다람쥐#1234', score: 120 },
+        { rank: 2, nickname: '배고픈호랑이#5678', score: 90 },
+        { rank: 3, nickname: '용감한토끼#1111', score: 55 },
+    ]);
+
+    useEffect(() => {
+        // 1. 닉네임 설정 (로그인: UserInfo / 비로그인: Random)
+        if (user) {
+            setMyNickname(user.name || user.email.split('@')[0]);
+        } else {
+            const { guestNick } = getOrInitGuestUser();
+            setMyNickname(guestNick);
+        }
+    }, [user]);
 
     // Game variables
     const gameRef = useRef({
@@ -55,6 +74,8 @@ const EventGame = () => {
                 gameLoop(0);
             }
         } else if (gameState === 'gameOver') {
+            // [Bug Fix] 게임 오버 시 키 입력 상태 강제 초기화 (캐릭터 멈춤)
+            gameRef.current.keys = {};
             drawGameOver();
         }
 
@@ -299,8 +320,30 @@ const EventGame = () => {
                 */}
 
                 <p style={{ marginTop: '1rem', color: '#6b7280' }}>
-                    방향키: 이동 | 스페이스바: 시작
+                    방향키: 이동 | 스페이스바: 시작 | 현재 플레이어: <span style={{ color: '#4ade80', fontWeight: 'bold' }}>{myNickname}</span>
                 </p>
+
+                {/* 3. Mock Ranking Board */}
+                <div style={{ marginTop: '2rem', width: '100%', maxWidth: '400px', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: '12px', padding: '1.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid #333', paddingBottom: '0.5rem' }}>
+                        <h3 style={{ margin: 0, fontFamily: 'Netmarble', color: '#facc15' }}>🏆 실시간 랭킹</h3>
+                        <span style={{ fontSize: '12px', color: '#666' }}>Top 10</span>
+                    </div>
+
+                    <div className="ranking-list" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        {rankingList.map((item, idx) => (
+                            <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', backgroundColor: idx === 0 ? 'rgba(250, 204, 21, 0.1)' : 'transparent', borderRadius: '6px', fontSize: '14px' }}>
+                                <div style={{ display: 'flex', gap: '10px' }}>
+                                    <span style={{ fontWeight: 'bold', width: '20px', color: idx < 3 ? '#facc15' : '#9ca3af' }}>{item.rank}</span>
+                                    <span style={{ color: item.nickname === myNickname ? '#4ade80' : '#ddd' }}>
+                                        {item.nickname} {item.nickname === myNickname && '(나)'}
+                                    </span>
+                                </div>
+                                <span style={{ fontWeight: 'bold', color: '#fff' }}>{item.score}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
 
             {/* Right Spacer (Optional, to center game perfectly if ad is only on left) */}
