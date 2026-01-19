@@ -16,21 +16,31 @@ const EventGame = () => {
     const [message, setMessage] = useState('');
     const [rewardStatus, setRewardStatus] = useState(null); // null, claiming, success, already, error
     const [myNickname, setMyNickname] = useState('');
+    const [myId, setMyId] = useState('');
 
-    // Mock Ranking Data
-    const [rankingList, setRankingList] = useState([
-        { rank: 1, nickname: '날쎈다람쥐#1234', score: 120 },
-        { rank: 2, nickname: '배고픈호랑이#5678', score: 90 },
-        { rank: 3, nickname: '용감한토끼#1111', score: 55 },
-    ]);
+    const [rankingList, setRankingList] = useState([]);
+
+    // Fetch Ranking Logic
+    const fetchRanking = async () => {
+        const list = await api.getMinigameRanking();
+        setRankingList(list);
+    };
+
+    useEffect(() => {
+        fetchRanking(); // Load on mount
+        const interval = setInterval(fetchRanking, 30000); // Refresh every 30s
+        return () => clearInterval(interval);
+    }, []);
 
     useEffect(() => {
         // 1. 닉네임 설정 (로그인: UserInfo / 비로그인: Random)
         if (user) {
             setMyNickname(user.name || user.email.split('@')[0]);
+            setMyId(user.sub);
         } else {
-            const { guestNick } = getOrInitGuestUser();
+            const { guestNick, guestId } = getOrInitGuestUser();
             setMyNickname(guestNick);
+            setMyId(guestId);
         }
     }, [user]);
 
@@ -41,6 +51,7 @@ const EventGame = () => {
         keys: {},
         lastBulletSpawn: 0,
         rewardRequested: false,
+        scoreSubmitted: false, // [NEW] Prevent duplicate submission
         scoreVal: 0,
         animationId: null,
         isPlaying: false
@@ -95,6 +106,7 @@ const EventGame = () => {
             lastBulletSpawn: 0,
             scoreVal: 0,
             rewardRequested: false,
+            scoreSubmitted: false, // Reset flag
         };
         setScore(0);
         setRewardStatus(null);
@@ -106,7 +118,7 @@ const EventGame = () => {
 
         if (!user) {
             console.warn("❌ No user logged in");
-            alert("로그인이 필요합니다!");
+            alert("보상을 흭득하려면 로그인이 필요합니다!");
             setRewardStatus('error');
             return;
         }
@@ -248,6 +260,22 @@ const EventGame = () => {
                 gameRef.current.rewardRequested = true;
                 requestReward(final);
             }
+
+            // [NEW] Submit Score to Global Ranking (Always submit if > 0 and not already submitted)
+            if (final > 0 && !gameRef.current.scoreSubmitted) {
+                console.log(`🚀 Submitting Score: ${final} for ${myNickname}`);
+                gameRef.current.scoreSubmitted = true;
+
+                api.submitMinigameScore(myId, myNickname, final)
+                    .then((res) => {
+                        console.log("✅ Score Submit Result:", res);
+                        fetchRanking();
+                    })
+                    .catch(err => console.error("❌ Score Submit Failed:", err));
+            } else {
+                if (final <= 0) console.log("ℹ️ Score is 0, skipping submission.");
+                else if (gameRef.current.scoreSubmitted) console.log("ℹ️ Score already submitted.");
+            }
         } else {
             ctx.fillStyle = '#9ca3af'; ctx.font = '16px "Netmarble", monospace'; ctx.fillText(`보상까지 ${REWARD_TARGET_SCORE - final}점 남음!`, 200, 260);
         }
@@ -326,7 +354,10 @@ const EventGame = () => {
                 {/* 3. Mock Ranking Board */}
                 <div style={{ marginTop: '2rem', width: '100%', maxWidth: '400px', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: '12px', padding: '1.5rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid #333', paddingBottom: '0.5rem' }}>
-                        <h3 style={{ margin: 0, fontFamily: 'Netmarble', color: '#facc15' }}>🏆 실시간 랭킹</h3>
+                        <div>
+                            <h3 style={{ margin: 0, fontFamily: 'Netmarble', color: '#facc15' }}>🏆 실시간 랭킹</h3>
+                            <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: '#9ca3af' }}>※ 50점이 넘어야 기록됩니다.</p>
+                        </div>
                         <span style={{ fontSize: '12px', color: '#666' }}>Top 10</span>
                     </div>
 

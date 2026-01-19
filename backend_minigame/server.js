@@ -1,3 +1,10 @@
+//.env 파일에서 환경변수를 가져옵니다.
+/* AWS_REGION =
+AWS_ACCESS_KEY_ID =
+    AWS_SECRET_ACCESS_KEY =
+    DYNAMODB_TABLE_NAME = 
+    require('dotenv').config(); */
+
 const express = require('express');
 const cors = require('cors');
 const { dynamo } = require('./dynamoClient');

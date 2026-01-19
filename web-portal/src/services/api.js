@@ -11,6 +11,9 @@ const API_MONTHLY_RANKING_URL = import.meta.env.VITE_API_MONTHLY_RANKING_URL || 
 // [Remote] 로그 수집용 람다 API 주소
 const LOG_API_URL = "https://0v71llt3ta.execute-api.ap-northeast-2.amazonaws.com/default/KG-log-lambda-ap-ne-2";
 
+// [Local] Minigame Backend URL
+const MINIGAME_URL = "http://localhost:3001";
+
 // Helper to simulate network request
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -308,6 +311,32 @@ export const api = {
         } catch (error) {
             console.error("Event Game API Error:", error);
             return { success: false, error: error.message };
+        }
+    },
+
+    // [New] Minigame Ranking System
+    submitMinigameScore: async (userId, nickname, score) => {
+        try {
+            const response = await fetch(`${MINIGAME_URL}/score`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, nickname, score })
+            });
+            return await response.json();
+        } catch (error) {
+            console.error("Minigame Score Submit Error:", error);
+            return { success: false, error: error.message };
+        }
+    },
+
+    getMinigameRanking: async () => {
+        try {
+            const response = await fetch(`${MINIGAME_URL}/ranking`);
+            if (!response.ok) throw new Error("Backend connection failed");
+            return await response.json();
+        } catch (error) {
+            console.error("Minigame Ranking Fetch Error:", error);
+            return [];
         }
     }
 };
