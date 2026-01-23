@@ -20,7 +20,7 @@
 *   **YAML 설정**: `test_ecs_attendance.yaml`
 ```yaml
 config:
-  target: "http://kg-dev-lb-esc-ap-ne-2-604922001.ap-northeast-2.elb.amazonaws.com"
+  target: "alb주소"
   phases:
     - duration: 60
       arrivalRate: 5
