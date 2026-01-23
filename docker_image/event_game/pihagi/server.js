@@ -96,6 +96,42 @@ app.post('/api/claim-reward', async (req, res) => {
     }
 });
 
+// CPU Stress Test Endpoint for Auto Scaling Verification
+app.get('/api/stress-cpu', async (req, res) => {
+    const duration = parseInt(req.query.duration || '10000'); // Default 10s
+    const targetLoad = parseFloat(req.query.load || '0.7');   // Default 70% load
+
+    console.log(`[Stress] CPU Stress Started: ${duration}ms, Load: ${targetLoad}`);
+
+    const start = Date.now();
+    const end = start + duration;
+
+    // Non-blocking loop (using setImmediate to allow event loop to breathe slightly, but block mostly)
+    // To simulate 70% load, we work for 70ms and sleep for 30ms in a 100ms cycle
+
+    // Warning: Node.js is single threaded. This WILL block other requests partially.
+    // This is intentional for testing CPU limits.
+
+    const worker = () => {
+        const now = Date.now();
+        if (now >= end) {
+            console.log(`[Stress] CPU Stress Completed`);
+            return res.json({ status: 'done', duration });
+        }
+
+        // Work phrase
+        const cycleStart = Date.now();
+        while (Date.now() - cycleStart < (100 * targetLoad)) {
+            Math.sqrt(Math.random() * Math.random()); // cpu burn
+        }
+
+        // Rest phrase (allow I/O handling)
+        setTimeout(worker, 100 * (1 - targetLoad));
+    };
+
+    worker();
+});
+
 // Health Check for ALB
 app.get('/health', (req, res) => {
     res.status(200).send('OK');

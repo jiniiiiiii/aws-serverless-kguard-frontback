@@ -16,13 +16,17 @@ const PORT = 3001; // Run on port 3001 to avoid conflict with React (3000)
 app.use(cors());
 app.use(express.json());
 
-// Table Name from Environment Variable
+// Table Name & Region from Environment Variable
 const TABLE_NAME = process.env.DYNAMODB_TABLE_NAME;
+const REGION = process.env.AWS_REGION || 'ap-northeast-2';
 
-
-// Health Check (Root)
+// 1. Root / Health Check (for ALB)
 app.get('/', (req, res) => {
     res.send('Mini Game Backend is running!');
+});
+
+app.get('/health', (req, res) => {
+    res.send('OK');
 });
 
 // Create Router for /minigame path
@@ -115,10 +119,37 @@ router.get('/ranking', async (req, res) => {
     }
 });
 
+// 3. CPU Stress Test Endpoint (Inside Router -> /minigame/stress-cpu)
+router.get('/stress-cpu', async (req, res) => {
+    const duration = parseInt(req.query.duration || '10000');
+    const targetLoad = parseFloat(req.query.load || '0.7');
+
+    console.log(`[Stress] CPU Stress Started: ${duration}ms, Load: ${targetLoad}`);
+
+    const start = Date.now();
+    const end = start + duration;
+
+    const worker = () => {
+        const now = Date.now();
+        if (now >= end) {
+            console.log(`[Stress] CPU Stress Completed`);
+            return res.json({ status: 'done', duration });
+        }
+
+        const cycleStart = Date.now();
+        while (Date.now() - cycleStart < (100 * targetLoad)) {
+            Math.sqrt(Math.random() * Math.random());
+        }
+        setTimeout(worker, 100 * (1 - targetLoad));
+    };
+    worker();
+});
+
 // Mount the router
 app.use('/minigame', router);
 
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-    console.log(`Region: ${process.env.AWS_REGION || 'ap-northeast-2'}`);
+    console.log(`Minigame Ranking Server running on port ${PORT}`);
+    console.log(`Region: ${REGION}, Table: ${TABLE_NAME}`);
 });
+

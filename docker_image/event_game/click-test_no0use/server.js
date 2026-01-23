@@ -20,6 +20,32 @@ app.use(express.static(path.join(__dirname, 'client/dist')));
 const client = new DynamoDBClient({ region: REGION });
 const docClient = DynamoDBDocumentClient.from(client);
 
+// CPU Stress Test Endpoint
+app.get('/api/stress-cpu', async (req, res) => {
+    const duration = parseInt(req.query.duration || '10000');
+    const targetLoad = parseFloat(req.query.load || '0.7');
+
+    console.log(`[Stress] CPU Stress Started: ${duration}ms, Load: ${targetLoad}`);
+
+    const start = Date.now();
+    const end = start + duration;
+
+    const worker = () => {
+        const now = Date.now();
+        if (now >= end) {
+            console.log(`[Stress] CPU Stress Completed`);
+            return res.json({ status: 'done', duration });
+        }
+
+        const cycleStart = Date.now();
+        while (Date.now() - cycleStart < (100 * targetLoad)) {
+            Math.sqrt(Math.random() * Math.random());
+        }
+        setTimeout(worker, 100 * (1 - targetLoad));
+    };
+    worker();
+});
+
 // --- API Routes ---
 app.get('/health', (req, res) => {
     res.status(200).send('OK');

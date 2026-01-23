@@ -1,0 +1,40 @@
+config:
+  target: "alb주소적기"
+  phases:
+    - duration: 120
+      arrivalRate: 5
+      name: "Warm up (Baseline)"
+    - duration: 300
+      arrivalRate: 10
+      rampTo: 100
+      name: "Ramp up (Searching for Capacity)"
+    - duration: 120
+      arrivalRate: 100
+      name: "Sustained High Load"
+  
+  plugins:
+    publish-metrics:
+      - type: cloudwatch
+        region: "ap-northeast-2"
+        namespace: "Artillery/Stress-Tests"
+        dimensions:
+          - name: "Target"
+            value: "ECS-Comprehensive-Real-API"
+
+scenarios:
+  - flow:
+      # 1. Ranking (Already 200 OK)
+      - get:
+          url: "/minigame/ranking"
+      
+      # 2. Attendance (Fixed: use random ID to avoid 409 Conflict)
+      - post:
+          url: "/attendance"
+          headers:
+            "content-type": "application/json"
+          json:
+            user_id: "stress_user_{{ $randomInt(1, 10000) }}"
+      
+      # 3. Pihagi (Verified path from test_ecs.yaml)
+      - get:
+          url: "/api/stress-cpu?duration=5000&load=0.8"

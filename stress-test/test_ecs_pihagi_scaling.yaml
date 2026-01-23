@@ -1,0 +1,37 @@
+config:
+  target: "alb주소적기"
+  phases:
+    # Phase 1: High CPU to Trigger Scaling (5 mins)
+    # Target: ~25 concurrent users. High CPU but responsive.
+    # Goal: Trigger CloudWatch Alarm (CPU > 50%)
+    - duration: 300
+      arrivalRate: 5
+      name: "Phase 1: Trigger Auto Scaling (Wait 5m)"
+
+    # Phase 2: Ramp Up to Capacity of 3 Tasks (2 mins)
+    # Scale from 1 container load to 3 container load
+    - duration: 120
+      arrivalRate: 5
+      rampTo: 20
+      name: "Phase 2: Ramp Up (Testing Scale-out)"
+
+    # Phase 3: Stress Test Max Capacity (3 mins)
+    # Target: ~100 concurrent users (Capacity for 3 containers)
+    - duration: 180
+      arrivalRate: 20
+      name: "Phase 3: Sustained Max Load"
+  
+  plugins:
+    publish-metrics:
+      - type: cloudwatch
+        region: "ap-northeast-2"
+        namespace: "Artillery/Stress-Tests"
+        dimensions:
+          - name: "Target"
+            value: "ECS-Pihagi-Scaling-Test"
+
+scenarios:
+  - flow:
+      - get:
+          # Request high CPU load (80%) for 5 seconds
+          url: "/api/stress-cpu?duration=5000&load=0.8"

@@ -1,0 +1,40 @@
+config:
+  target: "alb주소적기"
+  phases:
+    - duration: 60
+      arrivalRate: 5
+      name: "Warm up"
+    - duration: 300
+      arrivalRate: 15
+      rampTo: 100
+      name: "Ramp up (Trigger Scaling ALL)"
+    - duration: 120
+      arrivalRate: 100
+      name: "Sustained High Load"
+  
+  plugins:
+    publish-metrics:
+      - type: cloudwatch
+        region: "ap-northeast-2"
+        namespace: "Artillery/Stress-Tests"
+        dimensions:
+          - name: "Target"
+            value: "ECS-Fargate-All-Services"
+
+scenarios:
+  - flow:
+      # 1. Attendance Check (Default Rule)
+      # Falls through to Default -> Attendance Service
+      - get:
+          url: "/attendance/stress-cpu?duration=5000&load=0.8"
+          weight: 1
+
+      # 2. Pihagi (Path: /api/*)
+      - get:
+          url: "/api/stress-cpu?duration=5000&load=0.8"
+          weight: 1
+      
+      # 3. Minigame Ranking (Path: /minigame/*)
+      - get:
+          url: "/minigame/stress-cpu?duration=5000&load=0.8"
+          weight: 1

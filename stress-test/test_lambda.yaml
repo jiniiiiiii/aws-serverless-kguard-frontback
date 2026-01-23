@@ -1,0 +1,32 @@
+config:
+  # [MUST UPDATE] Replace with your actual API Gateway URL for HighScore Lambda
+  # [MUST CHECK] API Gateway URL for 'KG-inf-api-live-ranking-ap-ne-2'
+  target: "alb주소적기"
+  phases:
+    - duration: 60
+      arrivalRate: 10
+      name: "Warm up"
+    - duration: 120
+      arrivalRate: 10
+      rampTo: 100
+      name: "Ramp up Concurrency"
+    - duration: 60
+      arrivalRate: 100
+      name: "High Concurrency Test"
+  
+  plugins:
+    publish-metrics:
+      - type: cloudwatch
+        region: "ap-northeast-2"
+        namespace: "Artillery/Stress-Tests"
+        dimensions:
+          - name: "Target"
+            value: "Lambda-Highscore"
+
+scenarios:
+  - flow:
+      - post:
+          url: "/"
+          json:
+            action: "get_ranking"
+            region: "ap-northeast-2"

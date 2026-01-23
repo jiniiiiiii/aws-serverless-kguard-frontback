@@ -1,0 +1,35 @@
+config:
+  target: "alb주소적기"
+  phases:
+    # Phase 1: Trigger Scaling (5 mins)
+    # Expected: ~25 concurrent users (5 * 5s)
+    # Goal: Trigger > 50% CPU to start scaling BEFORE overload
+    - duration: 300
+      arrivalRate: 5
+      name: "Phase 1: Scale-out Trigger (Wait 5m)"
+
+    # Phase 2: Ramp Up (2 mins)
+    # Scale up to ~100 concurrent users (20 * 5s) assumption: 3 tasks active
+    - duration: 120
+      arrivalRate: 5
+      rampTo: 20
+      name: "Phase 2: Ramp Up to 3 Tasks Capacity"
+
+    # Phase 3: Sustained Load (3 mins)
+    - duration: 180
+      arrivalRate: 20
+      name: "Phase 3: Sustained Max Load"
+  
+  plugins:
+    publish-metrics:
+      - type: cloudwatch
+        region: "ap-northeast-2"
+        namespace: "Artillery/Stress-Tests"
+        dimensions:
+          - name: "Target"
+            value: "ECS-Attendance-Scaling"
+
+scenarios:
+  - flow:
+      - get:
+          url: "/attendance/stress-cpu?duration=5000&load=0.8"

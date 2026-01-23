@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "artillery-plugin-cloudwatch": "^0.1.7"
+  }
+}

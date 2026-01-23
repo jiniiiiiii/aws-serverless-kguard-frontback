@@ -167,8 +167,8 @@ def lambda_handler(event, context):
         result = {
             "highScore": my_score,
             "rank": my_rank,
-            "gold": int(item.get('gold', 0)),
-            "cash": int(item.get('cash', 0)),  # [NEW] Cash 필드 추가
+            "gold": int(item.get('gold') or 0),
+            "cash": int(item.get('cash') or 0),  # [NEW] Cash 필드 추가
             "accountCreatedAt": item.get('account_created_at', datetime.now().isoformat()),
             "region": COGNITO_REGION,
             "email": item.get('email', ''),

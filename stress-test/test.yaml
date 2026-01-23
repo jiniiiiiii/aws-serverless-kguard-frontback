@@ -1,0 +1,27 @@
+config:
+  target: "람다주소적기"
+  phases:
+    - duration: 60
+      arrivalRate: 10
+      name: "Warm up"
+    - duration: 240
+      arrivalRate: 10
+      rampTo: 200
+      name: "Ramp up to trigger Auto Scaling"
+  
+  # --- 플러그인 설정 시작 ---
+  plugins:
+    publish-metrics:
+      - type: cloudwatch
+        region: "ap-northeast-2"
+        namespace: "Artillery/Stress-Tests"
+        dimensions:
+          - name: "Artillery-test"
+            value: "attendance-check-service"
+
+# --- 플러그인 설정 끝 ---
+
+scenarios:
+  - flow:
+      - get:
+          url: "/health"
