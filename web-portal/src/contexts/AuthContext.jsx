@@ -15,17 +15,14 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         const initAuth = async () => {
             const token = localStorage.getItem('auth_token');
-            console.log('[Auth Debug] Init checking token:', token ? "Found" : "Missing");
 
             if (token) {
                 try {
                     // [Fix 1] 토큰 우선 디코딩 (로그인의 척도)
                     const payload = jwtDecode(token);
-                    console.log('[Auth Debug] Decoded Payload:', payload);
 
                     // 1-1. 만료 체크
                     if (payload.exp && payload.exp * 1000 < Date.now()) {
-                        console.warn('[Auth Debug] Token expired');
                         throw new Error('Token expired');
                     }
 
@@ -49,10 +46,9 @@ export const AuthProvider = ({ children }) => {
                         };
                         userState = { ...defaultProfile, ...userState };
                     } catch (profileError) {
-                        console.warn("Profile setup failed:", profileError);
+                        console.warn("Profile setup failed");
                     }
 
-                    console.log('[Auth Debug] Setting User:', userState);
                     setUser(userState);
                 } catch (error) {
                     console.error("Critical Auth check failed (Invalid Token):", error);

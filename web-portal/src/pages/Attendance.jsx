@@ -33,7 +33,6 @@ const Attendance = () => {
             setMessage("Attendance Checked! Reward Claimed.");
 
         } catch (error) {
-            console.error("Attendance Error:", error);
             setStatus('error');
             // Show friendly message
             if (error.message.includes("already attended")) {
